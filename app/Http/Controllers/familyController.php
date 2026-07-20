@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Family;
+use App\Models\family;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,7 +14,7 @@ class familyController extends Controller
      */
     public function index(): Response
     {
-        $data['dataFamily'] = Family::all();
+        $data['dataFamily'] = family::all();
         $data['title'] = 'Family Material';
         return Response(view('family.index', $data));
     }
@@ -40,7 +40,7 @@ class familyController extends Controller
             'name' => $request->nameFamily
         );
 
-        Family::create($data);
+        family::create($data);
 
         return redirect()->route('family.index');
     }
@@ -48,7 +48,7 @@ class familyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Family $family): Response
+    public function show(family $family): Response
     {
         //
     }
@@ -56,7 +56,7 @@ class familyController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Family $family): Response
+    public function edit(family $family): Response
     {
         //
     }
@@ -64,7 +64,7 @@ class familyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Family $family): RedirectResponse
+    public function update(Request $request, family $family): RedirectResponse
     {
         $family->update([
             'name' => $request->nameFamily
@@ -76,7 +76,7 @@ class familyController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Family $family): RedirectResponse
+    public function destroy(family $family): RedirectResponse
     {
         $family->delete();
 

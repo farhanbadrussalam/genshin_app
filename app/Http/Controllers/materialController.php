@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Material;
-use App\Models\Family;
+use App\Models\material;
+use App\Models\family;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +15,7 @@ class materialController extends Controller
      */
     public function index(): Response
     {
-        $data['dataFamily'] = Family::with('material')->orderBy('name', 'ASC')->get();
+        $data['dataFamily'] = family::with('material')->orderBy('name', 'ASC')->get();
         $data['title'] = 'Material';
 
         return Response(view('material.index', $data));
@@ -64,14 +64,14 @@ class materialController extends Controller
         );
 
         // Cek data
-        $cekdata = Material::where('name', $material_->name)->first();
+        $cekdata = material::where('name', $material_->name)->first();
 
         if(isset($cekdata)){
             $updateMount = $cekdata->update([
                 'amount' => (int) $cekdata->amount + $amount
             ]);
         }else{
-            $created = Material::create($data);
+            $created = material::create($data);
         }
 
         return redirect()->route('material.index');
@@ -80,7 +80,7 @@ class materialController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Material $material): Response
+    public function show(material $material): Response
     {
         //
     }
@@ -88,7 +88,7 @@ class materialController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Material $material): Response
+    public function edit(material $material): Response
     {
         //
     }
@@ -96,7 +96,7 @@ class materialController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Material $material): RedirectResponse
+    public function update(Request $request, material $material): RedirectResponse
     {
         $material->update([
             'amount' => $request->amount,
@@ -109,7 +109,7 @@ class materialController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Material $material): RedirectResponse
+    public function destroy(material $material): RedirectResponse
     {
         //
     }
