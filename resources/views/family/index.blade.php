@@ -10,6 +10,19 @@
     <i class="bi bi-collection-fill"></i> Family Material
   </div>
 
+  {{-- Search Bar --}}
+  <div class="search-filter-box mb-3">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="bi bi-search"></i>
+      </span>
+      <input type="text" class="form-control" id="searchFamilyInput" placeholder="Cari family material...">
+      <button class="btn btn-secondary text-muted" type="button" id="clearFamilySearch" style="display: none;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+
   <ol class="list-unstyled" id="familyList">
     @foreach($dataFamily as $index => $value)
     <li class="genshin-list-item animate-fade-in-up" style="animation-delay: {{ $index * 0.04 }}s;">
@@ -120,4 +133,41 @@
     $('#family_id').val(data.id);
     $('#editFamily').modal('show');
   }
+
+  $(document).ready(function() {
+    $('#searchFamilyInput').on('input', function() {
+      let q = $(this).val().toLowerCase().trim();
+      $('#clearFamilySearch').toggle(q.length > 0);
+
+      let matchCount = 0;
+      $('#familyList li:not(#noFamilySearchMatch)').each(function() {
+        let text = $(this).find('.item-name').text().toLowerCase();
+        if (text.includes(q)) {
+          $(this).show();
+          matchCount++;
+        } else {
+          $(this).hide();
+        }
+      });
+
+      if (matchCount === 0 && q.length > 0) {
+        if ($('#noFamilySearchMatch').length === 0) {
+          $('#familyList').append(`
+            <li id="noFamilySearchMatch" class="text-center py-4" style="color: var(--text-muted);">
+              <i class="bi bi-search" style="font-size: 2rem; opacity: 0.4;"></i>
+              <p class="mt-2 mb-0" style="font-size: 0.85rem;">Tidak ada family material yang cocok dengan "${q}"</p>
+            </li>
+          `);
+        } else {
+          $('#noFamilySearchMatch').show().find('p').text(`Tidak ada family material yang cocok dengan "${q}"`);
+        }
+      } else {
+        $('#noFamilySearchMatch').hide();
+      }
+    });
+
+    $('#clearFamilySearch').on('click', function() {
+      $('#searchFamilyInput').val('').trigger('input').focus();
+    });
+  });
 </script>

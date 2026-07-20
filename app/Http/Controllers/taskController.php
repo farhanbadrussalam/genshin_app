@@ -17,7 +17,7 @@ class taskController extends Controller
     public function index(): Response
     {
         $data['dataMaterial'] = material::orderby('familie_id', 'ASC')->orderby('name', 'ASC')->get();
-        $data['dataTask'] = task::with('sub_task')
+        $data['dataTask'] = task::with('sub_task.material')
                             ->orderby('prioritas', 'ASC')
                             ->where('status', 'start')
                             ->orderby('created_at', 'ASC')
@@ -123,7 +123,28 @@ class taskController extends Controller
      */
     public function update(Request $request, task $task): RedirectResponse
     {
-        //
+        $task->update([
+            'nama_task' => $request->nameTaskEdit,
+            'jenis' => $request->jenis_taskEdit,
+            'prioritas' => $request->prioritasEdit,
+            'images' => $request->urlImageEdit ?: $task->images,
+        ]);
+
+        if ($request->has('namaMaterial') && is_array($request->namaMaterial)) {
+            subTask::where('task_id', $task->id)->delete();
+
+            foreach ($request->namaMaterial as $key => $materialId) {
+                if (empty($materialId)) continue;
+                $amount = (int) ($request->amount[$key] ?? 0);
+                subTask::create([
+                    'task_id' => $task->id,
+                    'material_id' => $materialId,
+                    'amount' => $amount
+                ]);
+            }
+        }
+
+        return redirect()->route('task.index');
     }
 
     /**
@@ -161,11 +182,22 @@ class taskController extends Controller
     public function editMaterial(Request $request)
     {
         $idMaterial = $request->formidUpdatematerial;
-        $amount = $request->formAmountMaterial;
+        $amount = (int) $request->formAmountMaterial;
 
         $getMaterial = material::find($idMaterial);
-        $getMaterial->amount = $getMaterial->amount + $amount;
-        $getMaterial->save();
+        if ($getMaterial) {
+            $newAmount = max(0, $getMaterial->amount + $amount);
+            $getMaterial->amount = $newAmount;
+            $getMaterial->save();
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'id' => $getMaterial->id ?? null,
+                'new_amount' => $getMaterial->amount ?? 0
+            ]);
+        }
 
         return redirect()->route('task.index');
     }

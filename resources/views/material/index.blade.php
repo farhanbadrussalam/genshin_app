@@ -10,6 +10,21 @@
             <i class="bi bi-gem"></i> Material
         </div>
 
+        {{-- Search Bar --}}
+        <div class="search-filter-box mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" id="filterMaterialInput"
+                    placeholder="Cari nama material / kategori family...">
+                <button class="btn btn-secondary text-muted" type="button" id="clearMaterialFilter"
+                    style="display: none;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+
         {{-- Accordion --}}
         <div class="genshin-accordion accordion accordion-flush" id="accordionMaterial">
             @foreach ($dataFamily as $index => $value)
@@ -19,8 +34,8 @@
                             data-bs-target="#collapse-{{ $value->id }}" aria-expanded="false"
                             aria-controls="collapse-{{ $value->id }}">
                             <i class="bi bi-folder2 me-2" style="color: var(--color-gold); font-size: 0.9rem;"></i>
-                            {{ $value->name }}
-                            <span class="material-count-badge ms-auto me-2">{{ count($value->material) }}</span>
+                            <span class="flex-grow-1 text-truncate me-2">{{ $value->name }}</span>
+                            <span class="material-count-badge">{{ count($value->material) }}</span>
                         </button>
                     </h2>
                     <div id="collapse-{{ $value->id }}" class="accordion-collapse collapse"
@@ -312,5 +327,72 @@
             $('#imageMaterialEdit').attr('src', data.images);
             $('#editMaterial').modal('show');
         }
+
+        $(document).ready(function() {
+            $('#filterMaterialInput').on('input', function() {
+                let q = $(this).val().toLowerCase().trim();
+                $('#clearMaterialFilter').toggle(q.length > 0);
+
+                let matchTotal = 0;
+
+                $('#accordionMaterial .accordion-item').each(function() {
+                    let familyName = $(this).find('.accordion-button .flex-grow-1').text().toLowerCase();
+                    let $materials = $(this).find('.material-item');
+                    let familyMatches = familyName.includes(q);
+                    let matchingMaterialCount = 0;
+
+                    $materials.each(function() {
+                        let matName = $(this).find('.material-name').text().toLowerCase();
+                        let matDays = $(this).find('.material-days').text().toLowerCase();
+                        let matSource = $(this).find('.material-source').text().toLowerCase();
+
+                        if (familyMatches || matName.includes(q) || matDays.includes(q) || matSource.includes(q)) {
+                            $(this).show();
+                            matchingMaterialCount++;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+                    let $collapseElem = $(this).find('.accordion-collapse');
+                    let bsCollapse = bootstrap.Collapse.getInstance($collapseElem[0]) || new bootstrap.Collapse($collapseElem[0], { toggle: false });
+
+                    if (q.length > 0) {
+                        if (familyMatches || matchingMaterialCount > 0) {
+                            $(this).show();
+                            bsCollapse.show();
+                            matchTotal++;
+                        } else {
+                            $(this).hide();
+                            bsCollapse.hide();
+                        }
+                    } else {
+                        $(this).show();
+                        $materials.show();
+                        bsCollapse.hide();
+                        matchTotal++;
+                    }
+                });
+
+                if (matchTotal === 0 && q.length > 0) {
+                    if ($('#noMaterialFilterMatch').length === 0) {
+                        $('#accordionMaterial').append(`
+                            <div id="noMaterialFilterMatch" class="text-center py-5" style="color: var(--text-muted);">
+                                <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                                <p class="mt-2 mb-0" style="font-size: 0.85rem;">Tidak ada material yang cocok dengan "${q}"</p>
+                            </div>
+                        `);
+                    } else {
+                        $('#noMaterialFilterMatch').show().find('p').text(`Tidak ada material yang cocok dengan "${q}"`);
+                    }
+                } else {
+                    $('#noMaterialFilterMatch').hide();
+                }
+            });
+
+            $('#clearMaterialFilter').on('click', function() {
+                $('#filterMaterialInput').val('').trigger('input').focus();
+            });
+        });
     </script>
 @endsection

@@ -335,6 +335,26 @@ body {
 
 .genshin-accordion .accordion-button::after {
   filter: invert(0.8) sepia(1) saturate(2) hue-rotate(10deg);
+  margin-left: 0.5rem;
+}
+
+.material-count-badge {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  background: rgba(200, 170, 110, 0.12);
+  border: 1px solid rgba(200, 170, 110, 0.25);
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 0.25rem;
 }
 
 .genshin-accordion .accordion-body {
@@ -391,10 +411,11 @@ body {
   color: var(--text-muted);
 }
 
-.material-item .rarity-stars {
-  font-size: 0.65rem;
+.rarity-stars {
+  font-size: 0.7rem;
   color: var(--rarity-5);
   white-space: nowrap;
+  letter-spacing: 0.05em;
 }
 
 .material-item .amount-badge {
@@ -837,8 +858,32 @@ body {
 }
 
 /* ============================================================
-   INPUT GROUP
+   INPUT GROUP & SEARCH FILTER BOX
    ============================================================ */
+.search-filter-box {
+  position: relative;
+}
+
+.search-filter-box .input-group-text {
+  background: var(--bg-surface-2) !important;
+  border-color: var(--border-glass) !important;
+  color: var(--color-gold) !important;
+  border-top-left-radius: var(--radius-sm) !important;
+  border-bottom-left-radius: var(--radius-sm) !important;
+}
+
+.search-filter-box .form-control {
+  background: var(--bg-surface-2) !important;
+  border-color: var(--border-glass) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.88rem;
+}
+
+.search-filter-box .form-control:focus {
+  border-color: var(--color-gold) !important;
+  box-shadow: 0 0 0 0.2rem rgba(200, 170, 110, 0.15) !important;
+}
+
 .input-group .btn {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0 !important;
 }
