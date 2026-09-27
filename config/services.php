@@ -31,4 +31,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | HoYoLAB Python Microservice
+    |--------------------------------------------------------------------------
+    | Konfigurasi untuk berkomunikasi dengan FastAPI microservice (genshin.py).
+    | Set HOYOLAB_MICROSERVICE_URL di .env sesuai environment Anda:
+    |   - Local Docker (WSL): http://localhost:8001
+    |   - Dalam Docker network: http://hoyolab-service:8001
+    */
+    'hoyolab_microservice' => [
+        'url'     => env('HOYOLAB_MICROSERVICE_URL', 'http://localhost:8001'),
+        'timeout' => env('HOYOLAB_MICROSERVICE_TIMEOUT', 30),
+    ],
+
 ];
