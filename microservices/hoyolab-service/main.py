@@ -68,7 +68,23 @@ class WeaponDetail(BaseModel):
     rarity: int
     refinement: int
     level: int
-    ascension: int
+    ascension: int = 0
+    type: str = ""
+    icon: str = ""
+
+
+class ArtifactDetail(BaseModel):
+    """Detail artefak yang diequip karakter."""
+    id: int = 0
+    name: str = ""
+    pos: int = 1
+    pos_name: str = ""
+    rarity: int = 5
+    level: int = 0
+    icon: str = ""
+    set_name: str = ""
+    main_stat_name: str = ""
+    main_stat_value: str = ""
 
 
 class ConstellationDetail(BaseModel):
@@ -88,6 +104,7 @@ class CharacterDetail(BaseModel):
     constellation: int
     image: str
     weapon: WeaponDetail | None = None
+    artifacts: list[ArtifactDetail] = []
 
 
 class BattleChronicleResponse(BaseModel):
@@ -137,21 +154,68 @@ async def get_genshin_characters(body: HoyoCredentialsRequest):
     try:
         # ─── Ambil Data Battle Chronicle ─────────────────────────────────
         logger.info("Menghubungi HoYoLAB API...")
-        characters = await client.get_genshin_characters(body.uid)
-        logger.info(f"Berhasil mengambil {len(characters)} karakter untuk UID {body.uid}")
+        try:
+            detailed_data = await client.get_genshin_detailed_characters(body.uid)
+            characters = detailed_data.characters
+            logger.info(f"Berhasil mengambil {len(characters)} karakter detail untuk UID {body.uid}")
+        except Exception as ex_det:
+            logger.warning(f"get_genshin_detailed_characters gagal ({ex_det}), fallback ke get_genshin_characters...")
+            characters = await client.get_genshin_characters(body.uid)
+            logger.info(f"Fallback berhasil mengambil {len(characters)} karakter untuk UID {body.uid}")
+
+        WEAPON_TYPE_MAP = {
+            1: "Sword",
+            10: "Catalyst",
+            11: "Claymore",
+            12: "Bow",
+            13: "Polearm",
+        }
 
         # ─── Serialisasi Data ─────────────────────────────────────────────
         character_list: list[CharacterDetail] = []
         for char in characters:
             weapon_data = None
             if char.weapon:
+                w_type_raw = getattr(char.weapon, "type", 1)
+                w_type_name = WEAPON_TYPE_MAP.get(w_type_raw, "Sword") if isinstance(w_type_raw, int) else str(w_type_raw)
                 weapon_data = WeaponDetail(
                     name=char.weapon.name,
                     rarity=char.weapon.rarity,
-                    refinement=char.weapon.refinement,
+                    refinement=getattr(char.weapon, "refinement", 1),
                     level=char.weapon.level,
-                    ascension=char.weapon.ascension,
+                    ascension=getattr(char.weapon, "ascension", getattr(char.weapon, "promote_level", 0)),
+                    type=w_type_name,
+                    icon=str(getattr(char.weapon, "icon", "") or ""),
                 )
+
+            artifact_list: list[ArtifactDetail] = []
+            if hasattr(char, "artifacts") and char.artifacts:
+                for art in char.artifacts:
+                    set_obj = getattr(art, "set", None)
+                    s_name = getattr(set_obj, "name", "") if set_obj else ""
+                    main_stat_obj = getattr(art, "main_stat", None)
+                    ms_val = ""
+                    ms_name = ""
+                    if main_stat_obj:
+                        ms_val = str(getattr(main_stat_obj, "value", "") or "")
+                        info_obj = getattr(main_stat_obj, "info", None)
+                        if info_obj:
+                            ms_name = str(getattr(info_obj, "name", "") or "")
+
+                    artifact_list.append(
+                        ArtifactDetail(
+                            id=getattr(art, "id", 0),
+                            name=getattr(art, "name", ""),
+                            pos=getattr(art, "pos", 1),
+                            pos_name=getattr(art, "pos_name", ""),
+                            rarity=getattr(art, "rarity", 5),
+                            level=getattr(art, "level", 0),
+                            icon=str(getattr(art, "icon", "") or ""),
+                            set_name=s_name,
+                            main_stat_name=ms_name,
+                            main_stat_value=ms_val,
+                        )
+                    )
 
             character_list.append(
                 CharacterDetail(
@@ -160,10 +224,11 @@ async def get_genshin_characters(body: HoyoCredentialsRequest):
                     element=char.element.name if hasattr(char.element, "name") else str(char.element),
                     rarity=char.rarity,
                     level=char.level,
-                    friendship=char.friendship,
-                    constellation=char.constellation,
-                    image=char.image,
+                    friendship=getattr(char, "friendship", 1),
+                    constellation=getattr(char, "constellation", 0),
+                    image=getattr(char, "icon", getattr(char, "image", "")),
                     weapon=weapon_data,
+                    artifacts=artifact_list,
                 )
             )
 

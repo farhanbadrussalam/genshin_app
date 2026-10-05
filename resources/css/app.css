@@ -27,8 +27,8 @@
 
   /* Text */
   --text-primary:      #e8e0d0;
-  --text-secondary:    #a09880;
-  --text-muted:        #6b6456;
+  --text-secondary:    #cbd5e1;
+  --text-muted:        #f1f5f9;
   --text-gold:         var(--color-gold);
 
   /* Border */
@@ -189,9 +189,10 @@ body {
    PAGE LAYOUT
    ============================================================ */
 .page-container {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 1.25rem clamp(1rem, 2.5vw, 2.5rem);
 }
 
 .page-header {
@@ -1000,3 +1001,346 @@ input[type="range"] {
 .border-glass { border-color: var(--border-glass) !important; }
 .font-display { font-family: var(--font-display) !important; }
 .letter-wide { letter-spacing: 0.05em; }
+
+/* ============================================================
+   GAME ACCOUNT CARDS
+   ============================================================ */
+.account-card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.account-card:hover {
+  border-color: var(--border-glass-hover);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+/* Game Badge */
+.account-game-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  width: fit-content;
+}
+.account-game-badge.game-genshin_impact {
+  background: rgba(200, 170, 110, 0.15);
+  color: var(--color-gold);
+  border: 1px solid rgba(200, 170, 110, 0.3);
+}
+.account-game-badge.game-honkai_star_rail {
+  background: rgba(74, 144, 217, 0.15);
+  color: var(--color-blue);
+  border: 1px solid rgba(74, 144, 217, 0.3);
+}
+.account-game-badge.game-zenless_zone_zero {
+  background: rgba(78, 205, 196, 0.15);
+  color: var(--color-teal);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+/* Account Info */
+.account-info { flex: 1; }
+.account-nickname {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+}
+.account-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.meta-item {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.meta-item i { font-size: 0.7rem; }
+.account-notes {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0.75rem 0 0;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Account Actions */
+.account-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-glass);
+}
+.btn-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.3rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.68rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+.btn-action i { font-size: 0.95rem; }
+.btn-action-primary {
+  background: rgba(200, 170, 110, 0.1);
+  border-color: rgba(200, 170, 110, 0.25);
+  color: var(--color-gold);
+}
+.btn-action-primary:hover {
+  background: rgba(200, 170, 110, 0.2);
+  color: var(--color-gold-light);
+}
+.btn-action-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+.btn-action-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.btn-action-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.btn-action-danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--bg-surface-2);
+  border: 1px dashed var(--border-glass);
+  border-radius: var(--radius-lg);
+}
+
+/* Alert Toast */
+.alert-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  backdrop-filter: blur(12px);
+  animation: slideInRight 0.3s ease;
+  transition: opacity 0.4s ease;
+}
+.alert-toast.success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+.alert-toast.hide { opacity: 0; }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* ============================================================
+   MODAL GENSHIN STYLE
+   ============================================================ */
+.modal-genshin {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+}
+.modal-genshin-header {
+  background: var(--bg-surface-3);
+  border-bottom: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.modal-genshin-footer {
+  background: var(--bg-surface-3);
+  border-top: 1px solid var(--border-glass);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Form Elements */
+.form-label-genshin {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+.form-input-genshin,
+.form-select-genshin {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  transition: border-color var(--transition-fast);
+  outline: none;
+  appearance: auto;
+}
+.form-input-genshin:focus,
+.form-select-genshin:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(200, 170, 110, 0.15);
+}
+.form-input-genshin::placeholder { color: var(--text-muted); }
+.form-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Ghost button */
+.btn-genshin-ghost {
+  background: transparent;
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+}
+.btn-genshin-ghost:hover {
+  background: var(--bg-glass);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   GLOBAL DARK MODE DROPDOWN & FORM FIX
+   ============================================================ */
+:root {
+  color-scheme: dark;
+}
+
+select,
+.form-select,
+.form-control,
+input,
+textarea {
+  color-scheme: dark !important;
+}
+
+select,
+.form-select {
+  background-color: #161926 !important;
+  color: #f1f2f6 !important;
+  border-color: rgba(200, 170, 110, 0.25) !important;
+}
+
+select:focus,
+.form-select:focus {
+  background-color: #1a1f33 !important;
+  color: #ffffff !important;
+  border-color: #c8aa6e !important;
+  box-shadow: 0 0 0 0.25rem rgba(200, 170, 110, 0.2) !important;
+}
+
+/* Memperbaiki dropdown option & optgroup di Windows / Chromium */
+select option,
+.form-select option,
+select optgroup,
+.form-select optgroup {
+  background-color: #161926 !important;
+  color: #f1f2f6 !important;
+  padding: 8px 12px !important;
+}
+
+select option:hover,
+select option:focus,
+select option:checked,
+.form-select option:hover,
+.form-select option:focus,
+.form-select option:checked {
+  background-color: #262c45 !important;
+  color: #ffd700 !important;
+}
+
+/* Bootstrap Dropdown Menu */
+.dropdown-menu {
+  background-color: #161926 !important;
+  border: 1px solid rgba(200, 170, 110, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dropdown-item {
+  color: #d1d5db !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: rgba(200, 170, 110, 0.15) !important;
+  color: #ffd700 !important;
+}
+
+/* Select2 Global Fix */
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+  background-color: #161926 !important;
+  border-color: rgba(200, 170, 110, 0.25) !important;
+  color: #f1f2f6 !important;
+  height: auto !important;
+  min-height: 38px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #f1f2f6 !important;
+  line-height: 36px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 36px !important;
+}
+
+.select2-dropdown {
+  background-color: #161926 !important;
+  border-color: rgba(200, 170, 110, 0.25) !important;
+  color: #f1f2f6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+  background-color: #0f121d !important;
+  border-color: rgba(200, 170, 110, 0.3) !important;
+  color: #f1f2f6 !important;
+}
+
+.select2-container--default .select2-results__option {
+  background-color: #161926 !important;
+  color: #d1d5db !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option[aria-selected="true"] {
+  background-color: #262c45 !important;
+  color: #ffd700 !important;
+}
+
+

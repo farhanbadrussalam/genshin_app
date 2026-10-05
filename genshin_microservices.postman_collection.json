@@ -1,0 +1,672 @@
+{
+	"info": {
+		"_postman_id": "8f5a2b13-7e44-482a-9e19-9cf879d71a45",
+		"name": "Genshin App - Microservices & Sync APIs",
+		"description": "Koleksi Postman lengkap untuk Genshin Impact Management App:\n1. **HoYoLAB FastAPI Microservice** (Port 8801)\n2. **Laravel Microservice Bridge & Sync Endpoints** (Port 8888)\n3. **Enka.Network & External Data Sync Services**",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. HoYoLAB Microservice (Direct FastAPI - Port 8801)",
+			"description": "Endpoint langsung ke Python FastAPI Microservice yang berjalan di port 8801 (genshin.py engine).",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{hoyolab_base_url}}/health",
+							"host": [
+								"{{hoyolab_base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Mengecek status ketersediaan microservice Python HoYoLAB."
+					},
+					"response": [
+						{
+							"name": "Success Example",
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": \"ok\",\n    \"service\": \"hoyolab-service\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Characters & Battle Chronicle",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ltuid_v2\": \"{{ltuid_v2}}\",\n    \"ltoken_v2\": \"{{ltoken_v2}}\",\n    \"uid\": {{uid}}\n}"
+						},
+						"url": {
+							"raw": "{{hoyolab_base_url}}/api/genshin/characters",
+							"host": [
+								"{{hoyolab_base_url}}"
+							],
+							"path": [
+								"api",
+								"genshin",
+								"characters"
+							]
+						},
+						"description": "Mengambil data Battle Chronicle akun Genshin Impact langsung dari HoYoLAB API menggunakan genshin.py.\n\nBody memerlukan:\n- `ltuid_v2`: Cookie ltuid_v2 dari hoyolab.com\n- `ltoken_v2`: Cookie ltoken_v2 dari hoyolab.com\n- `uid`: UID game Genshin Impact pemain (9-10 digit)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get OpenAPI Specification JSON",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{hoyolab_base_url}}/openapi.json",
+							"host": [
+								"{{hoyolab_base_url}}"
+							],
+							"path": [
+								"openapi.json"
+							]
+						},
+						"description": "Mengambil spesifikasi OpenAPI / Swagger JSON dari FastAPI microservice."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Laravel - HoYoLAB Microservice Bridge (Port 8888)",
+			"description": "Endpoint pada backend Laravel yang memanggil dan memvalidasi respons dari Python Microservice.",
+			"item": [
+				{
+					"name": "Ping Microservice via Laravel",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{laravel_base_url}}/hoyolab/ping",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"hoyolab",
+								"ping"
+							]
+						},
+						"description": "Laravel memanggil endpoint ping ke microservice Python untuk memeriksa konektivitas antarkontainer."
+					},
+					"response": []
+				},
+				{
+					"name": "Import Characters as Upgrade Tasks",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ltuid_v2\": \"{{ltuid_v2}}\",\n    \"ltoken_v2\": \"{{ltoken_v2}}\",\n    \"uid\": {{uid}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/hoyolab/import-characters",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"hoyolab",
+								"import-characters"
+							]
+						},
+						"description": "Mengambil karakter dari HoYoLAB lalu otomatis membuat draft Upgrade Task di sistem perencanaan Task."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Laravel - Inventory Sync Services (HoYoLAB & Enka)",
+			"description": "Endpoint sinkronisasi data inventori akun (Karakter, Senjata, Artefak) melalui HoYoLAB cookie atau Enka.Network UID.",
+			"item": [
+				{
+					"name": "⚡ Sync All Inventory (Characters, Weapons & Artifacts)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}},\n    \"source\": \"enka\",\n    \"override_uid\": \"{{uid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/sync-all",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"sync-all"
+							]
+						},
+						"description": "⚡ SINKRONISASI 1 TOMBOL: Mensinkronkan Karakter Showcase, Senjata yang Terpasang, dan Artefak (Substat + Auto Score) sekaligus dalam satu request."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Characters from HoYoLAB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/characters/sync-hoyolab",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"characters",
+								"sync-hoyolab"
+							]
+						},
+						"description": "Mensinkronkan karakter ke inventori pemain dari HoYoLAB Battle Chronicle menggunakan cookie yang tersimpan pada akun game."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Characters from Enka.Network (UID)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}},\n    \"uid\": \"{{uid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/characters/sync-enka",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"characters",
+								"sync-enka"
+							]
+						},
+						"description": "Mensinkronkan karakter showcase in-game publik langsung menggunakan UID via Enka.Network API."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Weapons from HoYoLAB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/weapons/sync-hoyolab",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"weapons",
+								"sync-hoyolab"
+							]
+						},
+						"description": "Mensinkronkan senjata yang terpasang pada karakter dari HoYoLAB."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Weapons from Enka.Network (UID)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}},\n    \"uid\": \"{{uid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/weapons/sync-enka",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"weapons",
+								"sync-enka"
+							]
+						},
+						"description": "Mensinkronkan senjata karakter showcase via Enka.Network API."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Artifacts from HoYoLAB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/artifacts/sync-hoyolab",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"artifacts",
+								"sync-hoyolab"
+							]
+						},
+						"description": "Mensinkronkan artefak yang dipakai karakter dari HoYoLAB."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Artifacts from Enka.Network (UID)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}},\n    \"uid\": \"{{uid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/inventory/artifacts/sync-enka",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"inventory",
+								"artifacts",
+								"sync-enka"
+							]
+						},
+						"description": "Mensinkronkan artefak lengkap dengan sub-stats nyata dari showcase in-game via Enka.Network API."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Laravel - Artifact Scoring & Sub-stats Services",
+			"description": "Layanan perhitungan skor artefak, sinkronisasi sub-stat Enka, dan kalkulasi roll sub-stats.",
+			"item": [
+				{
+					"name": "Sync Enka & Auto-Score Artifacts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}},\n    \"uid\": \"{{uid}}\"\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/artifact-scoring/sync-enka",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"artifact-scoring",
+								"sync-enka"
+							]
+						},
+						"description": "Mengambil sub-stats asli dari profil in-game Genshin lewat Enka.Network lalu langsung menghitung skor artefak secara otomatis."
+					},
+					"response": []
+				},
+				{
+					"name": "Recalculate All Artifact Scores",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/artifact-scoring/score-all",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"artifact-scoring",
+								"score-all"
+							]
+						},
+						"description": "Menghitung ulang skor seluruh artefak akun sesuai konfigurasi bobot scoring karakter."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Simulated Mock Sub-stats",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": {{account_id}}\n}"
+						},
+						"url": {
+							"raw": "{{laravel_base_url}}/artifact-scoring/generate-mock-substats",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"artifact-scoring",
+								"generate-mock-substats"
+							]
+						},
+						"description": "Menghasilkan sub-stats simulasi acak sesuai aturan game Genshin untuk artefak yang belum memiliki sub-stat."
+					},
+					"response": []
+				},
+				{
+					"name": "Load Archetype Preset Weights",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{laravel_base_url}}/artifact-scoring/preset?archetype=dps_atk",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"artifact-scoring",
+								"preset"
+							],
+							"query": [
+								{
+									"key": "archetype",
+									"value": "dps_atk",
+									"description": "Pilihan: dps_atk, dps_hp, dps_def, sub_dps, support_buffer, support_healer, em_trigger"
+								}
+							]
+						},
+						"description": "Mengambil nilai bobot standar (*weights*) berdasarkan archetype build karakter (contoh: dps_atk, dps_hp, support_healer, dll)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Laravel - Master Data Sync Services",
+			"description": "Endpoint sinkronisasi data master karakter dan senjata dari Genshin Dev API publik.",
+			"item": [
+				{
+					"name": "Sync Master Characters (Project Amber - gi.yatta.moe)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{laravel_base_url}}/character/sync-all?source=amber",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"character",
+								"sync-all"
+							],
+							"query": [
+								{
+									"key": "source",
+									"value": "amber",
+									"description": "Pilihan: amber (Project Amber gi.yatta.moe) atau enka (Enka.Network)"
+								}
+							]
+						},
+						"description": "Sinkronisasi seluruh data katalog master karakter dari Project Amber (gi.yatta.moe) ke database lokal (terlengkap dengan Region/Bangsa dan icon HD)."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Master Characters (Enka.Network Store)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{laravel_base_url}}/character/sync-all?source=enka",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"character",
+								"sync-all"
+							],
+							"query": [
+								{
+									"key": "source",
+									"value": "enka",
+									"description": "Pilihan: amber atau enka"
+								}
+							]
+						},
+						"description": "Sinkronisasi seluruh data katalog master karakter dari repositori raw JSON Enka.Network."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Master Weapons (Genshin Dev API)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{laravel_base_url}}/weapon/sync-all",
+							"host": [
+								"{{laravel_base_url}}"
+							],
+							"path": [
+								"weapon",
+								"sync-all"
+							]
+						},
+						"description": "Sinkronisasi seluruh data katalog master senjata dari genshin.dev API ke database lokal."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "hoyolab_base_url",
+			"value": "http://localhost:8801",
+			"type": "string"
+		},
+		{
+			"key": "laravel_base_url",
+			"value": "http://localhost:8888",
+			"type": "string"
+		},
+		{
+			"key": "ltuid_v2",
+			"value": "123456789",
+			"type": "string"
+		},
+		{
+			"key": "ltoken_v2",
+			"value": "v2_CAISDGhveW9sYWI...",
+			"type": "string"
+		},
+		{
+			"key": "uid",
+			"value": "812345678",
+			"type": "string"
+		},
+		{
+			"key": "account_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

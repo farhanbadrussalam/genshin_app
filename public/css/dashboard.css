@@ -1,0 +1,578 @@
+/* ==========================================================================
+   Genshin App - Dashboard Styles
+   ========================================================================== */
+
+/* ─── Dashboard Full-Width Container Fix ───────────────────────────────── */
+.dashboard-page-container {
+    max-width: 1360px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 1.5rem 1.25rem 4rem !important;
+}
+
+/* ─── Banner Profil Akun ───────────────────────────────────────────────── */
+.account-hero-banner {
+    background: linear-gradient(135deg, rgba(22, 25, 38, 0.95), rgba(30, 41, 59, 0.8));
+    border: 1px solid rgba(229, 160, 41, 0.35);
+    border-radius: 14px;
+    padding: 1.2rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.account-avatar-circle {
+    width: 52px;
+    height: 52px;
+    background: rgba(229, 160, 41, 0.15);
+    border: 1.5px solid rgba(229, 160, 41, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-server-tag {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.badge-uid-tag {
+    background: rgba(229, 160, 41, 0.15);
+    color: var(--accent-gold, #e5a029);
+    border: 1px solid rgba(229, 160, 41, 0.35);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.nav-chip-link {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #f3f4f6);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.nav-chip-link:hover {
+    background: rgba(229, 160, 41, 0.15);
+    border-color: rgba(229, 160, 41, 0.4);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.nav-chip-link.highlight {
+    background: linear-gradient(135deg, rgba(229, 160, 41, 0.25), rgba(217, 119, 6, 0.3));
+    border-color: rgba(229, 160, 41, 0.5);
+    color: #fef08a;
+}
+
+/* ─── 4 Primary KPI Cards ──────────────────────────────────────────────── */
+.kpi-card-box {
+    background: var(--bg-card, #161926);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.kpi-card-box:hover {
+    border-color: rgba(229, 160, 41, 0.4);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    transform: translateY(-2px);
+}
+
+.kpi-icon-pill {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.kpi-icon-pill.gold   { background: rgba(229, 160, 41, 0.15); color: #eab308; }
+.kpi-icon-pill.blue   { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.kpi-icon-pill.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.kpi-icon-pill.green  { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+
+.kpi-card-heading {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-primary, #f3f4f6);
+    white-space: nowrap;
+}
+
+.kpi-pill-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.45rem;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+.kpi-pill-badge.gold   { background: rgba(229, 160, 41, 0.12); color: #eab308; border: 1px solid rgba(229, 160, 41, 0.25); }
+.kpi-pill-badge.blue   { background: rgba(59, 130, 246, 0.12); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.25); }
+.kpi-pill-badge.purple { background: rgba(168, 85, 247, 0.12); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.25); }
+.kpi-pill-badge.green  { background: rgba(34, 197, 94, 0.12); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.25); }
+
+.kpi-hero-val-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-big-num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    font-family: var(--font-display, serif);
+    display: block;
+}
+
+.kpi-unit-sub {
+    font-size: 0.74rem;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ─── Metric List (Non-Overlapping) ────────────────────────────────────── */
+.kpi-metric-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.kpi-metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.76rem;
+}
+
+.kpi-row-label {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.74rem;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.dot.gold   { background: #eab308; }
+.dot.purple { background: #a855f7; }
+.dot.cyan   { background: #06b6d4; }
+.dot.green  { background: #22c55e; }
+.dot.blue   { background: #3b82f6; }
+.dot.orange { background: #f97316; }
+.dot.gray   { background: #64748b; }
+
+.kpi-card-footer {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--accent-gold, #e5a029);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    transition: color 0.15s ease;
+}
+
+.kpi-card-footer:hover {
+    color: #fef08a;
+}
+
+/* ─── Dashboard Panel Box ──────────────────────────────────────────────── */
+.dashboard-panel-box {
+    background: var(--bg-card, #161926);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.25rem 1.35rem;
+}
+
+.panel-header-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+/* ─── Element Rows ─────────────────────────────────────────────────────── */
+.elem-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.78rem;
+}
+
+.elem-name-col {
+    width: 80px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.elem-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.elem-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.elem-count-col {
+    width: 58px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+/* ─── Weapon Rows ──────────────────────────────────────────────────────── */
+.wep-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.78rem;
+}
+
+.wep-label-col {
+    width: 85px;
+    flex-shrink: 0;
+    color: var(--text-primary, #f3f4f6);
+    font-weight: 500;
+}
+
+.wep-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wep-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e5a029, #fbbf24);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.wep-count-col {
+    width: 58px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+/* ─── Artifact Slot Tiles ──────────────────────────────────────────────── */
+.slot-tiles-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.35rem;
+}
+
+.slot-tile-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 0.4rem 0.2rem;
+    text-align: center;
+}
+
+.slot-tile-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.slot-tile-number {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--accent-gold, #e5a029);
+    line-height: 1.1;
+    display: block;
+}
+
+.slot-tile-name {
+    font-size: 0.66rem;
+    color: var(--text-muted, #94a3b8);
+}
+
+.top-sets-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.top-set-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.76rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+}
+
+.top-set-label {
+    color: var(--text-primary, #f3f4f6);
+    max-width: 75%;
+}
+
+.badge-set-count {
+    background: rgba(229, 160, 41, 0.15);
+    color: var(--accent-gold, #e5a029);
+    border: 1px solid rgba(229, 160, 41, 0.3);
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+/* ─── Character Showcase Card ─────────────────────────────────────────── */
+.char-showcase-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.char-showcase-box.five-star {
+    border-color: rgba(229, 160, 41, 0.35);
+    background: linear-gradient(145deg, rgba(229, 160, 41, 0.08), rgba(22, 25, 38, 0.95));
+}
+
+.char-showcase-box.four-star {
+    border-color: rgba(168, 85, 247, 0.3);
+    background: linear-gradient(145deg, rgba(168, 85, 247, 0.06), rgba(22, 25, 38, 0.95));
+}
+
+.char-showcase-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.char-avatar-frame {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+}
+
+.char-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(229, 160, 41, 0.5);
+    background: #1f2937;
+}
+
+.char-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 1.3rem;
+}
+
+.char-lvl-tag {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0 0.3rem;
+    border-radius: 4px;
+}
+
+.char-full-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+.badge-c-level {
+    background: rgba(229, 160, 41, 0.2);
+    color: var(--accent-gold, #e5a029);
+    border: 1px solid rgba(229, 160, 41, 0.4);
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.char-gear-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+}
+
+.gear-icon-thumb {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.gear-name-text {
+    font-size: 0.74rem;
+    color: var(--text-primary, #f3f4f6);
+}
+
+.gear-lvl-text {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.badge-r-level {
+    background: rgba(249, 115, 22, 0.25);
+    color: #fdba74;
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    font-size: 0.64rem;
+    padding: 0.08rem 0.3rem;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
+.art-dots-bar {
+    display: flex;
+    gap: 3px;
+}
+
+.art-dot-pill {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.art-dot-pill.filled {
+    background: var(--accent-gold, #e5a029);
+    box-shadow: 0 0 4px rgba(229, 160, 41, 0.7);
+}
+
+/* ─── 5-Star Weapon Card ──────────────────────────────────────────────── */
+.wep-five-star-card {
+    background: linear-gradient(145deg, rgba(229, 160, 41, 0.1), rgba(22, 25, 38, 0.95));
+    border: 1px solid rgba(229, 160, 41, 0.35);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.wep-five-star-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(229, 160, 41, 0.65);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.wep-art-box {
+    position: relative;
+    width: 100%;
+    height: 85px;
+    background: radial-gradient(circle, rgba(229, 160, 41, 0.22) 0%, rgba(15, 23, 42, 0.85) 80%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wep-art-img {
+    max-width: 82%;
+    max-height: 82%;
+    object-fit: contain;
+}
+
+.wep-badge-refine {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    background: rgba(249, 115, 22, 0.9);
+    color: #fff;
+    font-size: 0.64rem;
+    font-weight: 700;
+    padding: 0 0.35rem;
+    border-radius: 3px;
+}
+
+.wep-badge-level {
+    position: absolute;
+    bottom: 5px;
+    right: 6px;
+    background: rgba(15, 23, 42, 0.92);
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 0 0.35rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.wep-detail-box {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.wep-item-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.15rem;
+}
+
+.wep-user-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.text-purple {
+    color: #c084fc !important;
+}
+
+.text-cyan {
+    color: #67e8f9 !important;
+}

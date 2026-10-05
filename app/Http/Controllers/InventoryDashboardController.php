@@ -1,0 +1,274 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\GameAccount;
+use App\Models\InventoryCharacter;
+use App\Models\InventoryWeapon;
+use App\Models\InventoryArtifact;
+use App\Models\InventoryMaterial;
+use App\Models\task;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class InventoryDashboardController extends Controller
+{
+    /**
+     * Tampilan utama Dashboard Overview & Ringkasan Inventori Akun
+     */
+    public function index(Request $request): View
+    {
+        $accounts = GameAccount::orderBy('nickname')->get();
+
+        $activeAccountId = $request->query('account_id')
+            ? (int) $request->query('account_id')
+            : ($accounts->first()?->id ?? null);
+
+        $activeAccount = $activeAccountId
+            ? $accounts->firstWhere('id', $activeAccountId)
+            : null;
+
+        if (!$activeAccount) {
+            return view('inventory.dashboard', [
+                'accounts'              => $accounts,
+                'activeAccount'         => null,
+                'stats'                 => null,
+                'topCharactersShowcase' => collect(),
+                'fiveStarWeapons'       => collect(),
+            ]);
+        }
+
+        $accId = $activeAccount->id;
+
+        // ── 1. STATS KARAKTER ───────────────────────────────────────────────
+        $invCharacters = InventoryCharacter::with('character')
+            ->where('game_account_id', $accId)
+            ->get();
+
+        $totalChars = $invCharacters->count();
+        $char5Stars = $invCharacters->filter(fn($c) => ($c->character?->rarity ?? 0) === 5)->count();
+        $char4Stars = $invCharacters->filter(fn($c) => ($c->character?->rarity ?? 0) === 4)->count();
+        $charMaxLv  = $invCharacters->filter(fn($c) => $c->level >= 90)->count();
+        $charC6     = $invCharacters->filter(fn($c) => $c->constellation >= 6)->count();
+
+        // Distribusi elemen
+        $elementCounts = [
+            'Pyro'    => 0,
+            'Hydro'   => 0,
+            'Anemo'   => 0,
+            'Electro' => 0,
+            'Dendro'  => 0,
+            'Cryo'    => 0,
+            'Geo'     => 0,
+        ];
+        foreach ($invCharacters as $ic) {
+            $el = ucfirst(strtolower($ic->character?->element ?? ''));
+            if (isset($elementCounts[$el])) {
+                $elementCounts[$el]++;
+            }
+        }
+
+        // ── 2. STATS SENJATA ────────────────────────────────────────────────
+        $invWeapons = InventoryWeapon::with(['weapon', 'equippedCharacter'])
+            ->where('game_account_id', $accId)
+            ->get();
+
+        $totalWeapons   = $invWeapons->count();
+        $weapon5Stars   = $invWeapons->filter(fn($w) => ($w->weapon?->rarity ?? 0) === 5)->count();
+        $weapon4Stars   = $invWeapons->filter(fn($w) => ($w->weapon?->rarity ?? 0) === 4)->count();
+        $weaponMaxLv    = $invWeapons->filter(fn($w) => $w->level >= 90)->count();
+        $weaponR5       = $invWeapons->filter(fn($w) => $w->refinement >= 5)->count();
+        $weaponEquipped = $invWeapons->filter(fn($w) => !is_null($w->equipped_character_id))->count();
+
+        $weaponTypeCounts = [
+            'Sword'    => 0,
+            'Claymore' => 0,
+            'Polearm'  => 0,
+            'Bow'      => 0,
+            'Catalyst' => 0,
+        ];
+        foreach ($invWeapons as $iw) {
+            $wt = ucfirst(strtolower($iw->weapon?->type ?? ''));
+            if (isset($weaponTypeCounts[$wt])) {
+                $weaponTypeCounts[$wt]++;
+            }
+        }
+
+        // ── 3. STATS ARTIFAK ────────────────────────────────────────────────
+        $invArtifacts = InventoryArtifact::with(['artifactSet', 'equippedCharacter'])
+            ->where('game_account_id', $accId)
+            ->get();
+
+        $totalArtifacts = $invArtifacts->count();
+        $artMaxLv       = $invArtifacts->filter(fn($a) => $a->level >= 20)->count();
+        $art5Stars      = $invArtifacts->filter(fn($a) => $a->rarity === 5)->count();
+        $artEquipped    = $invArtifacts->filter(fn($a) => !is_null($a->equipped_character_id))->count();
+
+        $slotCounts = [
+            'flower'  => 0,
+            'plume'   => 0,
+            'sands'   => 0,
+            'goblet'  => 0,
+            'circlet' => 0,
+        ];
+        foreach ($invArtifacts as $ia) {
+            if (isset($slotCounts[$ia->slot_key])) {
+                $slotCounts[$ia->slot_key]++;
+            }
+        }
+
+        // Top 5 Set Artefak
+        $topSets = $invArtifacts->groupBy('artifact_set_id')
+            ->map(function ($group) {
+                return [
+                    'set'   => $group->first()->artifactSet,
+                    'count' => $group->count(),
+                ];
+            })
+            ->filter(fn($item) => !is_null($item['set']))
+            ->sortByDesc('count')
+            ->take(5);
+
+        // ── 4. STATS MATERIAL & TASK ─────────────────────────────────────────
+        $invMaterials = InventoryMaterial::where('game_account_id', $accId)->get();
+        $totalMaterialTypes    = $invMaterials->where('quantity', '>', 0)->count();
+        $totalMaterialQuantity = $invMaterials->sum('quantity');
+
+        $activeTasksCount = task::where('status', '!=', 'complete')->count();
+
+        // ── 5. SHOWCASE KARAKTER TERATAS ─────────────────────────────────────
+        $topCharacters = $invCharacters->sortByDesc(function ($c) {
+            $rarity = $c->character?->rarity ?? 4;
+            return ($c->level * 1000) + ($rarity * 100) + ($c->constellation * 10) + $c->ascension;
+        })->take(8);
+
+        $weaponsByChar = $invWeapons->filter(fn($w) => $w->equipped_character_id)->keyBy('equipped_character_id');
+        $artCountByChar = $invArtifacts->filter(fn($a) => $a->equipped_character_id)->groupBy('equipped_character_id');
+
+        $topCharactersShowcase = $topCharacters->map(function ($ic) use ($weaponsByChar, $artCountByChar) {
+            $charId = $ic->character_id;
+            return [
+                'inventory_character' => $ic,
+                'character'           => $ic->character,
+                'equipped_weapon'     => $weaponsByChar->get($charId),
+                'artifacts_count'     => $artCountByChar->has($charId) ? $artCountByChar->get($charId)->count() : 0,
+            ];
+        });
+
+        // ── 6. 5-STAR WEAPONS SHOWCASE ──────────────────────────────────────
+        $fiveStarWeapons = $invWeapons->filter(fn($w) => ($w->weapon?->rarity ?? 0) === 5)
+            ->sortByDesc('level')
+            ->take(8);
+
+        return view('inventory.dashboard', [
+            'accounts'              => $accounts,
+            'activeAccount'         => $activeAccount,
+            'stats'                 => [
+                'total_characters'     => $totalChars,
+                'char_5_stars'         => $char5Stars,
+                'char_4_stars'         => $char4Stars,
+                'char_max_level'       => $charMaxLv,
+                'char_c6'              => $charC6,
+                'element_counts'       => $elementCounts,
+
+                'total_weapons'        => $totalWeapons,
+                'weapon_5_stars'       => $weapon5Stars,
+                'weapon_4_stars'       => $weapon4Stars,
+                'weapon_max_level'     => $weaponMaxLv,
+                'weapon_r5'            => $weaponR5,
+                'weapon_equipped'      => $weaponEquipped,
+                'weapon_type_counts'   => $weaponTypeCounts,
+
+                'total_artifacts'      => $totalArtifacts,
+                'art_max_level'        => $artMaxLv,
+                'art_5_stars'          => $art5Stars,
+                'art_equipped'         => $artEquipped,
+                'slot_counts'          => $slotCounts,
+                'top_sets'             => $topSets,
+
+                'total_material_types' => $totalMaterialTypes,
+                'total_material_qty'   => $totalMaterialQuantity,
+                'active_tasks_count'   => $activeTasksCount,
+            ],
+            'topCharactersShowcase' => $topCharactersShowcase,
+            'fiveStarWeapons'       => $fiveStarWeapons,
+        ]);
+    }
+
+    /**
+     * ⚡ 1 TOMBOL SYNC SEMUA INVENTORI (Karakter, Senjata, Artefak)
+     */
+    public function syncAll(
+        Request $request,
+        \App\Services\EnkaNetworkService $enkaService,
+        \App\Services\HoyoLabMicroservice $hoyoLabService
+    ) {
+        $validated = $request->validate([
+            'account_id'   => 'required|exists:game_accounts,id',
+            'source'       => 'nullable|string|in:enka,hoyolab',
+            'override_uid' => 'nullable|string|max:20',
+        ]);
+
+        $account = GameAccount::findOrFail($validated['account_id']);
+        $source  = $validated['source'] ?? 'enka';
+        $uid     = !empty($validated['override_uid']) ? trim($validated['override_uid']) : $account->uid;
+
+        try {
+            if ($source === 'enka') {
+                $result = $enkaService->syncAllInventoryFromEnka($account, $uid);
+            } else {
+                // Sumber HoYoLAB via microservice
+                if (empty($account->ltuid_v2) || empty($account->ltmid_v2)) {
+                    $result = [
+                        'success' => false,
+                        'message' => 'Akun belum memiliki kredensial Cookie HoYoLAB yang lengkap.',
+                    ];
+                } else {
+                    $cookies = [
+                        'ltuid_v2'  => $account->ltuid_v2,
+                        'ltmid_v2'  => $account->ltmid_v2,
+                        'ltoken_v2' => $account->ltoken_v2,
+                        'cookie_token_v2' => $account->cookie_token_v2,
+                        'account_id_v2'   => $account->account_id_v2,
+                    ];
+                    $hoyoData = $hoyoLabService->syncAll($cookies, (int) $account->uid, $account->server);
+
+                    $syncedChars = count($hoyoData['characters'] ?? []);
+                    $syncedWeapons = count($hoyoData['weapons'] ?? []);
+                    $syncedArts = count($hoyoData['artifacts'] ?? []);
+
+                    $account->update(['last_synced_at' => now()]);
+
+                    $result = [
+                        'success'           => true,
+                        'message'           => "Berhasil mensinkronkan {$syncedChars} karakter, {$syncedWeapons} senjata, dan {$syncedArts} artifact dari HoYoLAB!",
+                        'synced_characters' => $syncedChars,
+                        'synced_weapons'    => $syncedWeapons,
+                        'synced_artifacts'  => $syncedArts,
+                    ];
+                }
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json($result);
+            }
+
+            return redirect()
+                ->route('inventory.dashboard', ['account_id' => $account->id])
+                ->with($result['success'] ? 'success' : 'error', $result['message']);
+
+        } catch (\Throwable $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal sinkronisasi: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal sinkronisasi inventori: ' . $e->getMessage());
+        }
+    }
+}
+

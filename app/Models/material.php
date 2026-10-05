@@ -22,4 +22,14 @@ class material extends Model
         'daysofweek',
         'source',
     ];
+
+    public function family()
+    {
+        return $this->belongsTo(family::class, 'familie_id');
+    }
+
+    public function inventoryMaterials()
+    {
+        return $this->hasMany(InventoryMaterial::class, 'material_id');
+    }
 }

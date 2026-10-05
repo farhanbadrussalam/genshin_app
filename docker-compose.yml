@@ -1,0 +1,81 @@
+services:
+  # ── Laravel Application (PHP 8.2 FPM) ──────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: genshin-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    networks:
+      - genshin-network
+    depends_on:
+      - db
+
+  # ── Nginx Web Server ───────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: genshin-nginx
+    restart: unless-stopped
+    ports:
+      - "8888:80"
+    volumes:
+      - .:/var/www:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - genshin-network
+    depends_on:
+      - app
+
+  # ── MySQL Database ─────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: genshin-mysql
+    restart: unless-stopped
+    # Port 3406 pada host (karena rentang 3301-3400 di-reserve oleh Windows/Hyper-V)
+    ports:
+      - "3406:3306"
+    environment:
+      MYSQL_DATABASE: genshin_app
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: genshin
+      MYSQL_PASSWORD: genshin_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - genshin-network
+
+  # ── HoYoLAB Python Microservice ─────────────────────────────────────────
+  hoyolab-service:
+    build:
+      context: ./microservices/hoyolab-service
+      dockerfile: Dockerfile
+    container_name: hoyolab-microservice
+    restart: unless-stopped
+    ports:
+      - "8801:8001"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8001"
+      WORKERS: "2"
+    volumes:
+      - ./microservices/hoyolab-service:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - genshin-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  genshin-network:
+    name: genshin-network
+    driver: bridge

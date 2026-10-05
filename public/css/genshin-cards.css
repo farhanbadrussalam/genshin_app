@@ -1,0 +1,934 @@
+/* ============================================================
+   GENSHIN APP - Common Card & Catalog Styles
+   Satu sumber terpusat untuk Master & Inventori
+   (Karakter, Senjata, dan Artifact)
+   ============================================================ */
+
+/* ─── Stat Badges ────────────────────────────────────────── */
+.char-stat-badge {
+    background: var(--bg-card, #161926);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.char-stat-badge .label {
+    color: var(--text-muted, #94a3b8);
+}
+
+.char-stat-badge .val {
+    color: var(--text-primary, #f3f4f6);
+    font-weight: 700;
+}
+
+.char-stat-badge.star-5 {
+    border-color: rgba(229, 160, 41, 0.4);
+    background: rgba(229, 160, 41, 0.08);
+}
+
+.char-stat-badge.star-5 .val {
+    color: #f59e0b;
+}
+
+.char-stat-badge.star-4 {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.char-stat-badge.star-4 .val {
+    color: #c084fc;
+}
+
+/* ─── Stat Card (Inventory Header Statistics) ─────────────── */
+.stat-card {
+    background: var(--bg-card, #161926);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.stat-icon {
+    font-size: 1.6rem;
+    opacity: 0.9;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text-primary, #f3f4f6);
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.2rem;
+}
+
+/* ─── Filter Panel & Form Controls ───────────────────────── */
+.filter-panel {
+    background: var(--bg-card, #161926);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+}
+
+.genshin-input-group-text {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.genshin-select {
+    background-color: var(--bg-input, #131722);
+    border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #f3f4f6);
+    border-radius: 8px;
+}
+
+.genshin-select:focus {
+    background-color: var(--bg-input, #131722);
+    border-color: var(--accent-gold, #e5a029);
+    color: var(--text-primary, #f3f4f6);
+    box-shadow: 0 0 0 0.2rem rgba(229, 160, 41, 0.15);
+}
+
+/* Element Quick Badges (Pills) */
+.element-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary, #cbd5e1);
+    transition: all 0.2s ease;
+}
+
+.element-badge-pill:hover,
+.element-badge-pill.active {
+    background: color-mix(in srgb, var(--pill-color, #e5a029) 20%, transparent);
+    border-color: var(--pill-color, #e5a029);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* ─── Inventory & Catalog Card ───────────────────────────── */
+.inv-card,
+.char-card {
+    position: relative;
+    background: var(--bg-card, #161926);
+    border-radius: 14px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.25s ease;
+}
+
+.inv-card:hover,
+.char-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* Bintang 5 */
+.inv-card.card-star-5,
+.char-card.card-star-5 {
+    border-color: rgba(229, 160, 41, 0.35);
+    background: linear-gradient(180deg, rgba(229, 160, 41, 0.08) 0%, var(--bg-card, #161926) 50%);
+}
+
+.inv-card.card-star-5:hover,
+.char-card.card-star-5:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 10px 28px rgba(229, 160, 41, 0.25);
+}
+
+/* Bintang 4 */
+.inv-card.card-star-4,
+.char-card.card-star-4 {
+    border-color: rgba(168, 85, 247, 0.35);
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, var(--bg-card, #161926) 50%);
+}
+
+.inv-card.card-star-4:hover,
+.char-card.card-star-4:hover {
+    border-color: #a855f7;
+    box-shadow: 0 10px 28px rgba(168, 85, 247, 0.25);
+}
+
+/* ─── Card Header & Tags ─────────────────────────────────── */
+.inv-card-header {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 3;
+}
+
+.weapon-type-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 6px;
+    color: #fff;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+}
+
+.inv-element-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.char-element-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.inv-const-tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fbbf24;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+}
+
+.inv-const-tag.c6-glow {
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    color: #fff;
+    border-color: #fde047;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+/* ─── Avatar & Image Boxes ───────────────────────────────── */
+.inv-avatar-box {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.inv-avatar {
+    max-width: 82%;
+    max-height: 82%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+    transition: transform 0.3s ease;
+}
+
+.inv-card:hover .inv-avatar {
+    transform: scale(1.08);
+}
+
+.inv-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Khusus Karakter yang menggunakan aspect ratio 1:1 */
+.char-avatar-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 100%;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.char-avatar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.char-card:hover .char-avatar {
+    transform: scale(1.05);
+}
+
+.char-avatar-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ─── Level Badge (Telah disatukan di kanan bawah) ────────── */
+.inv-level-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+}
+
+.inv-level-badge .cap {
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+/* ─── Card Body ──────────────────────────────────────────── */
+.inv-body {
+    padding: 0.85rem;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.char-info {
+    padding: 0.65rem 0.75rem;
+    text-align: center;
+}
+
+.inv-name,
+.char-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary, #f3f4f6);
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inv-stars,
+.char-stars {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    margin-bottom: 0.15rem;
+}
+
+/* Meta tags karakter */
+.char-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.meta-tag {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.meta-tag.region {
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* ─── Talent Display & Inventory Notes ───────────────────── */
+.talent-display {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.talent-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    padding: 0.2rem 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+}
+
+.talent-item .talent-type {
+    color: var(--text-muted, #94a3b8);
+    font-weight: 600;
+    font-size: 0.65rem;
+}
+
+.talent-item .talent-lvl {
+    color: var(--text-primary, #f3f4f6);
+    font-weight: 700;
+}
+
+.talent-item.crowned {
+    border-color: rgba(229, 160, 41, 0.6);
+    background: rgba(229, 160, 41, 0.15);
+}
+
+.talent-item.crowned .talent-lvl {
+    color: #f59e0b;
+}
+
+.inv-notes {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #cbd5e1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+    padding: 0.25rem 0.45rem;
+    margin-top: 0.4rem;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ─── Equipped & Passive Badges ──────────────────────────── */
+.equipped-badge {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    color: var(--text-secondary, #cbd5e1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.equipped-badge strong {
+    color: var(--text-primary, #f3f4f6);
+    margin-left: 0.25rem;
+}
+
+.equipped-badge.free {
+    border-style: dashed;
+    color: var(--text-muted, #94a3b8);
+}
+
+/* ─── Artifact Specific Details ──────────────────────────── */
+.artifact-bonus-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+}
+
+.bonus-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.bonus-desc {
+    font-size: 0.73rem;
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.35;
+}
+
+.bg-gold-subtle {
+    background: rgba(229, 160, 41, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(229, 160, 41, 0.4);
+}
+
+.bg-info-subtle {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.artifact-substats-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.72rem;
+    text-align: left;
+}
+
+.substat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.1rem 0;
+}
+
+.substat-item .substat-dot {
+    color: var(--accent-gold, #e5a029);
+    margin-right: 0.3rem;
+}
+
+.substat-item .substat-name {
+    color: var(--text-secondary, #cbd5e1);
+    flex: 1;
+}
+
+.substat-item .substat-val {
+    color: var(--text-primary, #f3f4f6);
+    font-weight: 600;
+}
+
+/* ─── Footer Action Buttons ──────────────────────────────── */
+.inv-footer {
+    padding: 0.6rem 0.85rem;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.inv-footer .form-delete {
+    margin: 0;
+    display: flex;
+}
+
+.btn-action {
+    height: 34px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary, #cbd5e1);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.btn-action.edit {
+    flex: 1;
+}
+
+.btn-action.delete {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.btn-action.edit:hover {
+    background: rgba(229, 160, 41, 0.15);
+    border-color: var(--accent-gold, #e5a029);
+    color: #fff;
+}
+
+.btn-action.delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* Tombol Aksi di Sudut Karakter (Hover) */
+.char-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.char-card:hover .char-actions {
+    opacity: 1;
+}
+
+.char-action-btn {
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.char-action-btn.edit:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.char-action-btn.delete:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+/* ─── Modals (Shared Theme) ──────────────────────────────── */
+.genshin-modal-content {
+    background: #121520;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 14px;
+}
+
+.genshin-modal-header {
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.genshin-modal-footer {
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.genshin-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary, #cbd5e1);
+}
+
+/* ==========================================================================
+   GAME HUB / MULTI-GAME PORTAL STYLES
+   ========================================================================== */
+.game-portal-hero {
+    position: relative;
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 18px;
+    background: radial-gradient(circle at 50% 0%, rgba(229, 160, 41, 0.15) 0%, rgba(13, 15, 26, 0.8) 70%);
+    border: 1px solid rgba(229, 160, 41, 0.25);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    overflow: hidden;
+}
+
+.game-portal-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #e5a029, #ffd700, transparent);
+}
+
+.game-hub-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(22, 27, 46, 0.95) 0%, rgba(15, 18, 30, 0.98) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    text-decoration: none !important;
+    color: inherit;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.game-hub-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+    color: inherit;
+}
+
+.game-hub-card.game-active {
+    border-color: rgba(229, 160, 41, 0.45);
+    cursor: pointer;
+}
+
+.game-hub-card.game-active:hover {
+    border-color: #ffd700;
+    box-shadow: 0 16px 40px rgba(229, 160, 41, 0.25);
+}
+
+.game-hub-card.game-active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #e5a029, #ffd700, #ff9f1a);
+}
+
+.game-hub-card.game-hsr {
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.game-hub-card.game-hsr:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 16px 40px rgba(56, 189, 248, 0.2);
+}
+
+.game-hub-card.game-hsr::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #0284c7, #38bdf8, #818cf8);
+}
+
+.game-hub-card.game-zzz {
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.game-hub-card.game-zzz:hover {
+    border-color: #f43f5e;
+    box-shadow: 0 16px 40px rgba(244, 63, 94, 0.2);
+}
+
+.game-hub-card.game-zzz::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #e11d48, #f43f5e, #fbbf24);
+}
+
+.game-hub-card.game-wuwa {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.game-hub-card.game-wuwa:hover {
+    border-color: #c084fc;
+    box-shadow: 0 16px 40px rgba(168, 85, 247, 0.2);
+}
+
+.game-hub-card.game-wuwa::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #7e22ce, #a855f7, #38bdf8);
+}
+
+.game-card-banner {
+    position: relative;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #0f121d;
+}
+
+.game-card-banner-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0.25;
+    background-size: cover;
+    background-position: center;
+    filter: blur(1px);
+    transition: transform 0.5s ease;
+}
+
+.game-hub-card:hover .game-card-banner-bg {
+    transform: scale(1.08);
+    opacity: 0.35;
+}
+
+.game-card-icon-wrap {
+    position: relative;
+    z-index: 2;
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 15, 26, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    font-size: 2rem;
+    transition: transform 0.3s;
+}
+
+.game-hub-card:hover .game-card-icon-wrap {
+    transform: scale(1.1);
+}
+
+.game-card-body {
+    padding: 1.25rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.game-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: fit-content;
+}
+
+.game-status-badge.status-active {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #4ade80;
+}
+
+.game-status-badge.status-indev {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+}
+
+.game-status-badge.status-planned {
+    background: rgba(148, 163, 184, 0.15);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #cbd5e1;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+    display: inline-block;
+}
+
+.game-status-badge.status-active .status-dot {
+    animation: statusPulse 1.8s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.game-card-title {
+    font-family: var(--font-display, inherit);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 0.65rem;
+    margin-bottom: 0.25rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.game-card-meta {
+    font-size: 0.76rem;
+    color: var(--text-secondary, #94a3b8);
+    margin-bottom: 0.75rem;
+}
+
+.game-card-desc {
+    font-size: 0.83rem;
+    color: #cbd5e1;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+.game-tag-pill {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.btn-game-enter {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.btn-game-enter.btn-active-game {
+    background: linear-gradient(135deg, #e5a029, #c8aa6e);
+    color: #0b0c10;
+    box-shadow: 0 4px 14px rgba(229, 160, 41, 0.35);
+}
+
+.btn-game-enter.btn-active-game:hover {
+    background: linear-gradient(135deg, #f59e0b, #ffd700);
+    box-shadow: 0 6px 20px rgba(229, 160, 41, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-game-enter.btn-coming-soon {
+    background: rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    cursor: not-allowed;
+}
+

@@ -21,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
+
         if (request()->server('HTTP_X_FORWARDED_PROTO') === 'https' || env('APP_ENV') === 'production' || isset($_SERVER['VERCEL'])) {
             URL::forceScheme('https');
         }

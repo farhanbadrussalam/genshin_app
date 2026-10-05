@@ -6,8 +6,14 @@
 
     <div class="page-container" style="padding-top: 1.25rem; padding-bottom: 5rem;">
 
-        <div class="page-header">
-            <i class="bi bi-list-task"></i> Task
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="page-header mb-0">
+                <i class="bi bi-list-task"></i> Task
+            </div>
+            <a href="{{ route('calculator.index') }}" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm" style="height: 34px;">
+                <i class="bi bi-calculator-fill"></i>
+                <span class="d-none d-sm-inline">Kalkulator Upgrade</span>
+            </a>
         </div>
 
         {{-- Search Bar --}}

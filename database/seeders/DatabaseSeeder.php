@@ -104,6 +104,11 @@ class DatabaseSeeder extends Seeder
             family::firstOrCreate(['name' => $name]);
         }
 
-        $this->call(MaterialSeeder::class);
+        $this->call([
+            MaterialSeeder::class,
+            CharacterSeeder::class,
+            WeaponSeeder::class,
+            ArtifactSetSeeder::class,
+        ]);
     }
 }
