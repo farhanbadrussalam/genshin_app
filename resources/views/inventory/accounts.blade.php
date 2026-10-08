@@ -74,6 +74,15 @@
                     <i class="bi bi-arrow-repeat"></i> Belum pernah sync
                   </span>
                 @endif
+                @if($account->hasHoyoLabCookies())
+                  <span class="meta-item text-success" title="Cookie HoYoLAB terpasang">
+                    <i class="bi bi-shield-check"></i> HoYoLAB Connected
+                  </span>
+                @else
+                  <span class="meta-item text-warning" title="Belum ada Cookie HoYoLAB">
+                    <i class="bi bi-shield-exclamation"></i> Belum Ada Cookie
+                  </span>
+                @endif
               </div>
               @if($account->notes)
                 <p class="account-notes">{{ $account->notes }}</p>
@@ -82,6 +91,11 @@
 
             {{-- Actions --}}
             <div class="account-actions">
+              <a href="{{ route('daily-resin.index', ['account_id' => $account->id]) }}" class="btn-action text-info border-info border-opacity-25"
+                 title="Pantau Resin & Daily Check-in">
+                <i class="bi bi-moon-stars-fill"></i>
+                <span>Daily & Resin</span>
+              </a>
               <a href="{{ route('inventory.characters.index', ['account_id' => $account->id]) }}" class="btn-action btn-action-primary"
                  title="Lihat Inventori Karakter">
                 <i class="bi bi-box-seam"></i>
@@ -89,7 +103,7 @@
               </a>
               <button class="btn-action btn-action-secondary"
                       title="Edit Akun"
-                      onclick="openEditModal({{ $account->id }}, '{{ addslashes($account->nickname) }}', '{{ $account->server }}', '{{ addslashes($account->notes ?? '') }}')">
+                      onclick="openEditModal({{ $account->id }}, '{{ addslashes($account->nickname) }}', '{{ $account->server }}', '{{ addslashes($account->notes ?? '') }}', '{{ addslashes($account->ltuid_v2 ?? '') }}', '{{ addslashes($account->ltoken_v2 ?? '') }}')">
                 <i class="bi bi-pencil"></i>
                 <span>Edit</span>
               </button>
@@ -160,6 +174,19 @@
             </select>
           </div>
 
+          {{-- HoYoLAB Cookies --}}
+          <div class="p-3 rounded-2 bg-dark bg-opacity-50 border border-secondary border-opacity-25 mb-3">
+            <div class="fw-semibold text-gold small mb-2"><i class="bi bi-key-fill me-1"></i>Kredensial HoYoLAB (Opsional)</div>
+            <div class="form-group-genshin mb-2">
+              <label class="form-label-genshin">Cookie ltuid_v2</label>
+              <input type="text" name="ltuid_v2" class="form-input-genshin" placeholder="Contoh: 55724837">
+            </div>
+            <div class="form-group-genshin mb-0">
+              <label class="form-label-genshin">Cookie ltoken_v2</label>
+              <input type="text" name="ltoken_v2" class="form-input-genshin" placeholder="Contoh: v2_CAIS...">
+            </div>
+          </div>
+
           {{-- Notes --}}
           <div class="form-group-genshin mb-0">
             <label class="form-label-genshin">Catatan <span class="text-muted">(opsional)</span></label>
@@ -205,6 +232,19 @@
               @endforeach
             </select>
           </div>
+          {{-- HoYoLAB Cookies --}}
+          <div class="p-3 rounded-2 bg-dark bg-opacity-50 border border-secondary border-opacity-25 mb-3">
+            <div class="fw-semibold text-gold small mb-2"><i class="bi bi-key-fill me-1"></i>Kredensial HoYoLAB</div>
+            <div class="form-group-genshin mb-2">
+              <label class="form-label-genshin">Cookie ltuid_v2</label>
+              <input type="text" name="ltuid_v2" id="editLtuid" class="form-input-genshin" placeholder="Contoh: 55724837">
+            </div>
+            <div class="form-group-genshin mb-0">
+              <label class="form-label-genshin">Cookie ltoken_v2</label>
+              <input type="text" name="ltoken_v2" id="editLtoken" class="form-input-genshin" placeholder="Contoh: v2_CAIS...">
+            </div>
+          </div>
+
           <div class="form-group-genshin mb-0">
             <label class="form-label-genshin">Catatan <span class="text-muted">(opsional)</span></label>
             <textarea name="notes" id="editNotes" class="form-input-genshin" rows="2"></textarea>
@@ -232,10 +272,12 @@
 @push('scripts')
 <script>
   // Edit modal
-  function openEditModal(id, nickname, server, notes) {
+  function openEditModal(id, nickname, server, notes, ltuid, ltoken) {
     document.getElementById('editNickname').value = nickname;
     document.getElementById('editServer').value   = server;
     document.getElementById('editNotes').value    = notes;
+    document.getElementById('editLtuid').value    = ltuid || '';
+    document.getElementById('editLtoken').value   = ltoken || '';
     document.getElementById('formEditAccount').action = '/game-accounts/' + id;
     new bootstrap.Modal(document.getElementById('modalEditAccount')).show();
   }

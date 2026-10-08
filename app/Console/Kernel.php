@@ -12,7 +12,17 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Auto Daily Check-in dijalankan setiap hari pada pukul 01:00 UTC (08:00 WIB/reset harian HoYoverse)
+        $schedule->command('hoyolab:auto-checkin')
+            ->dailyAt('01:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Pengecekan Resin Alert setiap 30 menit
+        $schedule->command('hoyolab:check-resin-alerts')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**

@@ -28,21 +28,25 @@ class GameAccountController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'game'     => 'required|string',
-            'uid'      => 'required|string|max:20|unique:game_accounts,uid',
-            'nickname' => 'required|string|max:100',
-            'server'   => 'required|string|max:10',
-            'notes'    => 'nullable|string',
+            'game'      => 'required|string',
+            'uid'       => 'required|string|max:20|unique:game_accounts,uid',
+            'nickname'  => 'required|string|max:100',
+            'server'    => 'required|string|max:10',
+            'ltuid_v2'  => 'nullable|string',
+            'ltoken_v2' => 'nullable|string',
+            'notes'     => 'nullable|string',
         ], [
             'uid.unique' => 'UID ini sudah terdaftar.',
         ]);
 
         GameAccount::create([
-            'game'     => $request->input('game'),
-            'uid'      => $request->input('uid'),
-            'nickname' => $request->input('nickname'),
-            'server'   => $request->input('server'),
-            'notes'    => $request->input('notes'),
+            'game'      => $request->input('game'),
+            'uid'       => $request->input('uid'),
+            'nickname'  => $request->input('nickname'),
+            'server'    => $request->input('server'),
+            'ltuid_v2'  => $request->input('ltuid_v2'),
+            'ltoken_v2' => $request->input('ltoken_v2'),
+            'notes'     => $request->input('notes'),
         ]);
 
         return redirect()->route('game-accounts.index')
@@ -55,15 +59,19 @@ class GameAccountController extends Controller
     public function update(Request $request, GameAccount $gameAccount): RedirectResponse
     {
         $request->validate([
-            'nickname' => 'required|string|max:100',
-            'server'   => 'required|string|max:10',
-            'notes'    => 'nullable|string',
+            'nickname'  => 'required|string|max:100',
+            'server'    => 'required|string|max:10',
+            'ltuid_v2'  => 'nullable|string',
+            'ltoken_v2' => 'nullable|string',
+            'notes'     => 'nullable|string',
         ]);
 
         $gameAccount->update([
-            'nickname' => $request->input('nickname'),
-            'server'   => $request->input('server'),
-            'notes'    => $request->input('notes'),
+            'nickname'  => $request->input('nickname'),
+            'server'    => $request->input('server'),
+            'ltuid_v2'  => $request->input('ltuid_v2'),
+            'ltoken_v2' => $request->input('ltoken_v2'),
+            'notes'     => $request->input('notes'),
         ]);
 
         return redirect()->route('game-accounts.index')

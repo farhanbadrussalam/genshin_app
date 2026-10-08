@@ -20,10 +20,25 @@ class GameAccount extends Model
         'avatar_url',
         'notes',
         'last_synced_at',
+        'auto_checkin_enabled',
+        'last_checkin_at',
+        'last_checkin_status',
+        'last_checkin_message',
+        'resin_alert_enabled',
+        'resin_alert_threshold',
+        'last_known_resin',
+        'last_known_resin_max',
+        'last_resin_synced_at',
+        'last_resin_alert_at',
     ];
 
     protected $casts = [
-        'last_synced_at' => 'datetime',
+        'last_synced_at'       => 'datetime',
+        'auto_checkin_enabled' => 'boolean',
+        'resin_alert_enabled'  => 'boolean',
+        'last_checkin_at'      => 'datetime',
+        'last_resin_synced_at' => 'datetime',
+        'last_resin_alert_at'  => 'datetime',
     ];
 
     /**
@@ -68,6 +83,14 @@ class GameAccount extends Model
     }
 
     /**
+     * Cek apakah akun memiliki cookie HoYoLAB yang lengkap
+     */
+    public function hasHoyoLabCookies(): bool
+    {
+        return !empty($this->ltuid_v2) && !empty($this->ltoken_v2);
+    }
+
+    /**
      * Relasi ke User (jika auth sudah diaktifkan)
      */
     public function user()
@@ -105,5 +128,29 @@ class GameAccount extends Model
     public function inventoryMaterials()
     {
         return $this->hasMany(InventoryMaterial::class, 'game_account_id');
+    }
+
+    /**
+     * Log check-in harian
+     */
+    public function dailyCheckinLogs()
+    {
+        return $this->hasMany(DailyCheckinLog::class, 'game_account_id')->latest('checked_at');
+    }
+
+    /**
+     * Log alert resin
+     */
+    public function resinAlerts()
+    {
+        return $this->hasMany(ResinAlert::class, 'game_account_id')->latest('notified_at');
+    }
+
+    /**
+     * Alert resin yang belum dibaca
+     */
+    public function unreadResinAlerts()
+    {
+        return $this->hasMany(ResinAlert::class, 'game_account_id')->where('is_read', false);
     }
 }

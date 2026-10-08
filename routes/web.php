@@ -36,6 +36,9 @@ Route::get('api/weapons', [\App\Http\Controllers\WeaponController::class, 'apiLi
 Route::post('artifact/sync-all', [\App\Http\Controllers\ArtifactSetController::class, 'syncAll'])->name('artifact.sync-all');
 Route::resource('artifact', \App\Http\Controllers\ArtifactSetController::class);
 Route::get('api/artifacts', [\App\Http\Controllers\ArtifactSetController::class, 'apiList'])->name('artifact.api');
+Route::post('enemy/sync-all', [\App\Http\Controllers\EnemyController::class, 'syncAll'])->name('enemy.sync-all');
+Route::resource('enemy', \App\Http\Controllers\EnemyController::class);
+Route::get('api/enemies', [\App\Http\Controllers\EnemyController::class, 'apiList'])->name('enemy.api');
 
 // ─── Inventory: Game Accounts ─────────────────────────────────────────────────
 Route::resource('game-accounts', GameAccountController::class)
@@ -106,4 +109,21 @@ Route::prefix('hoyolab')->name('hoyolab.')->group(function () {
     // Cek apakah microservice Python aktif
     Route::get('ping', [HoyoLabController::class, 'pingMicroservice'])
         ->name('ping');
+});
+// ─── Party Matchup & Analyzer ────────────────────────────────────────────────
+Route::prefix('party')->name('party.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PartyAnalyzerController::class, 'index'])->name('index');
+    Route::post('/analyze-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'analyzeAjax'])->name('analyze-ajax');
+    Route::post('/auto-generate', [\App\Http\Controllers\PartyAnalyzerController::class, 'autoGenerateAjax'])->name('auto-generate');
+    Route::post('/save', [\App\Http\Controllers\PartyAnalyzerController::class, 'saveParty'])->name('save');
+    Route::delete('/saved/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteParty'])->name('delete-saved');
+});
+// ??? Auto Daily Check-in & Resin Alert ????????????????????????????????????????
+Route::prefix('daily-resin')->name('daily-resin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\DailyResinController::class, 'index'])->name('index');
+    Route::get('/data/{gameAccount}', [\App\Http\Controllers\DailyResinController::class, 'ajaxData'])->name('data');
+    Route::post('/checkin/{gameAccount}', [\App\Http\Controllers\DailyResinController::class, 'claimCheckin'])->name('checkin');
+    Route::post('/settings/{gameAccount}', [\App\Http\Controllers\DailyResinController::class, 'updateSettings'])->name('settings');
+    Route::post('/alerts/{gameAccount}/mark-read', [\App\Http\Controllers\DailyResinController::class, 'markAlertsAsRead'])->name('alerts.mark-read');
+    Route::post('/alerts/{gameAccount}/test', [\App\Http\Controllers\DailyResinController::class, 'testResinAlert'])->name('alerts.test');
 });
