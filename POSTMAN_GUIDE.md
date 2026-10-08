@@ -21,7 +21,7 @@ Di dalam koleksi ini sudah disertakan variabel otomatis yang bisa Anda ubah nila
 
 | Nama Variabel | Nilai Default | Penjelasan |
 | :--- | :--- | :--- |
-| `hoyolab_base_url` | `http://localhost:8801` | URL langsung ke Python FastAPI Microservice |
+| `hoyolab_base_url` | `http://localhost:8001` | URL langsung ke Python FastAPI Microservice |
 | `laravel_base_url` | `http://localhost:8888` | URL aplikasi Laravel / Nginx |
 | `ltuid_v2` | `123456789` | Cookie `ltuid_v2` dari [hoyolab.com](https://www.hoyolab.com) |
 | `ltoken_v2` | `v2_CAISDGhveW9sYWI...` | Cookie `ltoken_v2` dari [hoyolab.com](https://www.hoyolab.com) |
@@ -32,7 +32,7 @@ Di dalam koleksi ini sudah disertakan variabel otomatis yang bisa Anda ubah nila
 
 ## 📂 Struktur Endpoint dalam Koleksi
 
-### 1. HoYoLAB Microservice (Direct FastAPI - Port 8801)
+### 1. HoYoLAB Microservice (Direct FastAPI - Port 8001)
 Endpoint langsung ke service Python (`genshin.py`):
 - **`GET /health`** : Pengecekan status kesehatan microservice Python.
 - **`POST /api/genshin/characters`** : Mengambil data Battle Chronicle (karakter, level, konstelasi, senjata, dan artefak) menggunakan cookie `ltuid_v2` dan `ltoken_v2`.

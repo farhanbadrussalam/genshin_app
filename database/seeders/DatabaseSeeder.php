@@ -109,6 +109,7 @@ class DatabaseSeeder extends Seeder
             CharacterSeeder::class,
             WeaponSeeder::class,
             ArtifactSetSeeder::class,
+            EnemySeeder::class,
         ]);
     }
 }

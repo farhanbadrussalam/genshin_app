@@ -2,13 +2,13 @@
 	"info": {
 		"_postman_id": "8f5a2b13-7e44-482a-9e19-9cf879d71a45",
 		"name": "Genshin App - Microservices & Sync APIs",
-		"description": "Koleksi Postman lengkap untuk Genshin Impact Management App:\n1. **HoYoLAB FastAPI Microservice** (Port 8801)\n2. **Laravel Microservice Bridge & Sync Endpoints** (Port 8888)\n3. **Enka.Network & External Data Sync Services**",
+		"description": "Koleksi Postman lengkap untuk Genshin Impact Management App:\n1. **HoYoLAB FastAPI Microservice** (Port 8001)\n2. **Laravel Microservice Bridge & Sync Endpoints** (Port 8888)\n3. **Enka.Network & External Data Sync Services**",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "1. HoYoLAB Microservice (Direct FastAPI - Port 8801)",
-			"description": "Endpoint langsung ke Python FastAPI Microservice yang berjalan di port 8801 (genshin.py engine).",
+			"name": "1. HoYoLAB Microservice (Direct FastAPI - Port 8001)",
+			"description": "Endpoint langsung ke Python FastAPI Microservice yang berjalan di port 8001 (genshin.py engine).",
 			"item": [
 				{
 					"name": "Health Check",
@@ -640,7 +640,7 @@
 	"variable": [
 		{
 			"key": "hoyolab_base_url",
-			"value": "http://localhost:8801",
+			"value": "http://localhost:8001",
 			"type": "string"
 		},
 		{

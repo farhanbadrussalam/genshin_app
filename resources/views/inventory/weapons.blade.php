@@ -51,12 +51,12 @@
 
                 @if ($activeAccount)
                     <button class="btn-genshin btn-genshin-sm"
-                        style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(249, 115, 22, 0.15)); border-color: rgba(234, 179, 8, 0.5);"
+                        style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(249, 115, 22, 0.15)); border-color: rgba(234, 179, 8, 0.5); color: #f3f4f6;"
                         data-bs-toggle="modal" data-bs-target="#modalSyncEnkaWeapon">
                         <i class="bi bi-cloud-arrow-down-fill me-1 text-warning"></i>Sync Enka (UID)
                     </button>
                     <button class="btn-genshin btn-genshin-sm"
-                        style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2)); border-color: rgba(96, 165, 250, 0.5);"
+                        style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2)); border-color: rgba(96, 165, 250, 0.5); color: #f3f4f6;"
                         data-bs-toggle="modal" data-bs-target="#modalSyncHoyoLabWeapon">
                         <i class="bi bi-arrow-repeat me-1"></i>Sync HoYoLAB
                     </button>

@@ -207,6 +207,9 @@ class InventoryDashboardController extends Controller
             'account_id'   => 'required|exists:game_accounts,id',
             'source'       => 'nullable|string|in:enka,hoyolab',
             'override_uid' => 'nullable|string|max:20',
+            'ltuid_v2'     => 'nullable|string',
+            'ltoken_v2'    => 'nullable|string',
+            'save_credentials' => 'nullable',
         ]);
 
         $account = GameAccount::findOrFail($validated['account_id']);
@@ -218,16 +221,29 @@ class InventoryDashboardController extends Controller
                 $result = $enkaService->syncAllInventoryFromEnka($account, $uid);
             } else {
                 // Sumber HoYoLAB via microservice
-                if (empty($account->ltuid_v2) || empty($account->ltmid_v2)) {
+                $reqLtuid = trim($validated['ltuid_v2'] ?? '');
+                $reqLtoken = trim($validated['ltoken_v2'] ?? '');
+                
+                $ltuid = !empty($reqLtuid) ? $reqLtuid : $account->ltuid_v2;
+                $ltoken = !empty($reqLtoken) ? $reqLtoken : $account->ltoken_v2;
+
+                if (empty($ltuid) || empty($ltoken)) {
                     $result = [
                         'success' => false,
                         'message' => 'Akun belum memiliki kredensial Cookie HoYoLAB yang lengkap.',
                     ];
                 } else {
+                    if (!empty($validated['save_credentials'])) {
+                        $account->update([
+                            'ltuid_v2' => $ltuid,
+                            'ltoken_v2' => $ltoken,
+                        ]);
+                    }
+
                     $cookies = [
-                        'ltuid_v2'  => $account->ltuid_v2,
-                        'ltmid_v2'  => $account->ltmid_v2,
-                        'ltoken_v2' => $account->ltoken_v2,
+                        'ltuid_v2'  => $ltuid,
+                        'ltmid_v2'  => $account->ltmid_v2 ?: $ltuid,
+                        'ltoken_v2' => $ltoken,
                         'cookie_token_v2' => $account->cookie_token_v2,
                         'account_id_v2'   => $account->account_id_v2,
                     ];

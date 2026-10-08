@@ -711,6 +711,27 @@
               <small class="text-light" style="font-size: 0.75rem; opacity: 0.85;">Default menggunakan UID akun terpilih ({{ $activeAccount->uid }}).</small>
             </div>
 
+            <div id="hoyoLabCookieGroup" class="d-none">
+              <div class="mb-2">
+                <label class="form-label genshin-label">Cookie ltuid_v2 <span class="text-danger">*</span></label>
+                <input type="text" name="ltuid_v2" id="ltuid_v2_input" class="form-control genshin-input" 
+                       value="{{ $activeAccount->ltuid_v2 ?? '' }}" 
+                       placeholder="contoh: 123456789">
+              </div>
+              <div class="mb-3">
+                <label class="form-label genshin-label">Cookie ltoken_v2 <span class="text-danger">*</span></label>
+                <input type="text" name="ltoken_v2" id="ltoken_v2_input" class="form-control genshin-input" 
+                       value="{{ $activeAccount->ltoken_v2 ?? '' }}" 
+                       placeholder="contoh: v2_xxxx...">
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="save_credentials" value="1" id="saveCredentialsCheckAll" checked>
+                <label class="form-check-label text-light" for="saveCredentialsCheckAll" style="font-size: 0.78rem;">
+                  Simpan cookie ini di akun game
+                </label>
+              </div>
+            </div>
+
             <div class="alert alert-dark border border-secondary text-light mb-0" style="font-size: 0.8rem; background: rgba(13, 15, 26, 0.8);">
               <i class="bi bi-info-circle-fill text-gold me-1"></i>
               <strong>Catatan Enka:</strong> Pastikan di dalam game Genshin Impact, opsi <em>"Tampilkan Detail Karakter"</em> pada profil Anda dalam keadaan <strong>AKTIF</strong>.
@@ -740,6 +761,21 @@
   $(function () {
     const $form = $('#formSyncAllInventory');
     const $btn = $('#btnSubmitSyncAll');
+
+    // Toggle groups based on source selection
+    $('input[name="source"]').on('change', function() {
+      if ($(this).val() === 'hoyolab') {
+        $('#overrideUidGroup').addClass('d-none');
+        $('#hoyoLabCookieGroup').removeClass('d-none');
+        if (!$('#ltuid_v2_input').val()) $('#ltuid_v2_input').prop('required', true);
+        if (!$('#ltoken_v2_input').val()) $('#ltoken_v2_input').prop('required', true);
+      } else {
+        $('#overrideUidGroup').removeClass('d-none');
+        $('#hoyoLabCookieGroup').addClass('d-none');
+        $('#ltuid_v2_input').prop('required', false);
+        $('#ltoken_v2_input').prop('required', false);
+      }
+    });
 
     $form.on('submit', function (e) {
       e.preventDefault();

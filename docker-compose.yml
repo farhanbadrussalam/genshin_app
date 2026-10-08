@@ -54,8 +54,9 @@ services:
       dockerfile: Dockerfile
     container_name: hoyolab-microservice
     restart: unless-stopped
+    # Port 8001 pada host (rentang 8753-8852 di-reserve oleh Windows/Hyper-V sehingga port 8801 tidak bisa di-bind)
     ports:
-      - "8801:8001"
+      - "8001:8001"
     environment:
       HOST: "0.0.0.0"
       PORT: "8001"
@@ -63,7 +64,7 @@ services:
     volumes:
       - ./microservices/hoyolab-service:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

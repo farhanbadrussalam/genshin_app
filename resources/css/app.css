@@ -571,6 +571,14 @@ body {
   transform: translateY(0);
 }
 
+/* Override text color for translucent buttons with inline backgrounds */
+.btn-genshin[style*="rgba"] {
+  color: #f3f4f6 !important;
+}
+.btn-genshin[style*="rgba"]:hover {
+  color: #ffffff !important;
+}
+
 /* Override Bootstrap buttons for dark theme */
 .btn-primary {
   background: linear-gradient(135deg, var(--color-purple-dark), var(--color-purple)) !important;
