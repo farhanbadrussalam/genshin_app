@@ -10,6 +10,8 @@ use App\Http\Controllers\GameAccountController;
 use App\Http\Controllers\CharacterController;
 use App\Http\Controllers\InventoryCharacterController;
 use App\Http\Controllers\ArtifactScoringController;
+use App\Http\Controllers\GoodFormatController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -48,6 +50,14 @@ Route::resource('game-accounts', GameAccountController::class)
 Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\InventoryDashboardController::class, 'index'])->name('dashboard');
     Route::post('sync-all', [\App\Http\Controllers\InventoryDashboardController::class, 'syncAll'])->name('sync-all');
+
+    // ─── GOOD Format: Export & Import ──────────────────────────
+    Route::prefix('good')->name('good.')->group(function () {
+        Route::get('/', [GoodFormatController::class, 'index'])->name('index');
+        Route::post('export', [GoodFormatController::class, 'export'])->name('export');
+        Route::post('export-json', [GoodFormatController::class, 'exportJson'])->name('export-json');
+        Route::post('import', [GoodFormatController::class, 'import'])->name('import');
+    });
 
     Route::get('characters', [InventoryCharacterController::class, 'index'])->name('characters.index');
     Route::post('characters', [InventoryCharacterController::class, 'store'])->name('characters.store');
@@ -102,14 +112,12 @@ Route::prefix('calculator')->name('calculator.')->group(function () {
 
 // ─── HoYoLAB Microservice Integration ────────────────────────────────────────
 Route::prefix('hoyolab')->name('hoyolab.')->group(function () {
-    // Import karakter dari HoYoLAB → simpan sebagai draft Task
     Route::post('import-characters', [HoyoLabController::class, 'importCharactersAsTasks'])
         ->name('import-characters');
-
-    // Cek apakah microservice Python aktif
     Route::get('ping', [HoyoLabController::class, 'pingMicroservice'])
         ->name('ping');
 });
+
 // ─── Party Matchup & Analyzer ────────────────────────────────────────────────
 Route::prefix('party')->name('party.')->group(function () {
     Route::get('/', [\App\Http\Controllers\PartyAnalyzerController::class, 'index'])->name('index');
@@ -118,7 +126,8 @@ Route::prefix('party')->name('party.')->group(function () {
     Route::post('/save', [\App\Http\Controllers\PartyAnalyzerController::class, 'saveParty'])->name('save');
     Route::delete('/saved/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteParty'])->name('delete-saved');
 });
-// ??? Auto Daily Check-in & Resin Alert ????????????????????????????????????????
+
+// ─── Auto Daily Check-in & Resin Alert ────────────────────────────────────────
 Route::prefix('daily-resin')->name('daily-resin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\DailyResinController::class, 'index'])->name('index');
     Route::get('/data/{gameAccount}', [\App\Http\Controllers\DailyResinController::class, 'ajaxData'])->name('data');

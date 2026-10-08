@@ -88,6 +88,9 @@
             <span>⚡ Sync Semua (Karakter, Senjata, Artefak)</span>
           </button>
 
+          <a href="{{ route('inventory.good.index', ['account_id' => $activeAccount->id]) }}" class="nav-chip-link" style="background: rgba(228, 196, 133, 0.2); border-color: rgba(228, 196, 133, 0.6); color: #fff;">
+            <i class="bi bi-arrow-left-right text-gold me-1"></i>Export / Import GOOD
+          </a>
           <a href="{{ route('inventory.characters.index', ['account_id' => $activeAccount->id]) }}" class="nav-chip-link">
             <i class="bi bi-person-badge-fill text-gold me-1"></i>Karakter
           </a>
@@ -104,6 +107,29 @@
             <i class="bi bi-calculator-fill me-1"></i>Kalkulator
           </a>
         </div>
+      </div>
+    </div>
+
+    {{-- Banner GOOD Format Integration --}}
+    <div class="p-3 mb-4 rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-3 animate-fade-in-up" style="background: linear-gradient(135deg, rgba(228, 196, 133, 0.12), rgba(30, 41, 59, 0.7)); border: 1px solid rgba(228, 196, 133, 0.3);">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" style="background: rgba(228, 196, 133, 0.2); width: 44px; height: 44px;">
+          <i class="bi bi-arrow-left-right text-gold fs-4"></i>
+        </div>
+        <div>
+          <div class="fw-bold text-white d-flex align-items-center gap-2">
+            <span>Standar Komunitas: Format GOOD (Genshin Open Object Description)</span>
+            <span class="badge bg-warning text-dark small fw-bold">v2 Kompatibel</span>
+          </div>
+          <div class="text-muted small">
+            Migrasikan koleksi Karakter, Senjata, dan Roll Substat Artefak ke dan dari <strong>Genshin Optimizer</strong> atau scanner komunitas dengan 1 klik.
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ route('inventory.good.index', ['account_id' => $activeAccount->id]) }}" class="btn btn-sm btn-outline-warning fw-bold d-inline-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right me-1"></i>Buka Fitur GOOD (Export / Import)
+        </a>
       </div>
     </div>
 

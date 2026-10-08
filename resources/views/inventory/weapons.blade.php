@@ -60,6 +60,9 @@
                         data-bs-toggle="modal" data-bs-target="#modalSyncHoyoLabWeapon">
                         <i class="bi bi-arrow-repeat me-1"></i>Sync HoYoLAB
                     </button>
+                    <a href="{{ route('inventory.good.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm" style="background: rgba(228, 196, 133, 0.15); border-color: rgba(228, 196, 133, 0.5); color: var(--genshin-gold);">
+                        <i class="bi bi-arrow-left-right me-1"></i>GOOD (Export/Import)
+                    </a>
                     <button class="btn-genshin btn-genshin-sm" data-bs-toggle="modal"
                         data-bs-target="#modalAddInventoryWeapon">
                         <i class="bi bi-plus-lg me-1"></i>Tambah Senjata

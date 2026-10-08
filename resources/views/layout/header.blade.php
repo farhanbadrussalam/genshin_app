@@ -3,7 +3,7 @@
 
     {{-- Brand / Logo --}}
     <a class="navbar-brand" href="{{ url('/') }}">
-      <span class="brand-icon">?</span>
+      <span class="brand-icon">✦</span>
       Genshin
     </a>
 
@@ -61,8 +61,9 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-dark border-secondary">
             <li><a class="dropdown-item {{ request()->routeIs('inventory.dashboard') ? 'active' : '' }}" href="{{ route('inventory.dashboard') }}"><i class="bi bi-speedometer2 me-2 text-gold"></i>Ringkasan Inventori</a></li>
-            <li><a class="dropdown-item text-warning fw-bold" href="{{ route('inventory.dashboard') }}"><i class="bi bi-cloud-arrow-down-fill me-2 text-warning"></i>? Sync Semua Inventori</a></li>
-            <li><a class="dropdown-item text-info fw-bold" href="{{ route('daily-resin.index') }}"><i class="bi bi-moon-stars-fill me-2 text-info"></i>?? Daily & Resin Alert</a></li>
+            <li><a class="dropdown-item text-warning fw-bold" href="{{ route('inventory.dashboard') }}"><i class="bi bi-cloud-arrow-down-fill me-2 text-warning"></i>⚡ Sync Semua Inventori</a></li>
+            <li><a class="dropdown-item {{ request()->routeIs('inventory.good.*') ? 'active' : '' }} text-warning fw-bold" href="{{ route('inventory.good.index') }}"><i class="bi bi-arrow-left-right me-2 text-warning"></i>⇄ Export / Import GOOD</a></li>
+            <li><a class="dropdown-item text-info fw-bold" href="{{ route('daily-resin.index') }}"><i class="bi bi-moon-stars-fill me-2 text-info"></i>🌙 Daily & Resin Alert</a></li>
             <li><hr class="dropdown-divider border-secondary opacity-25"></li>
             <li><a class="dropdown-item {{ request()->routeIs('inventory.characters.*') ? 'active' : '' }}" href="{{ route('inventory.characters.index') }}"><i class="bi bi-person-badge-fill me-2 text-gold"></i>Inventori Karakter</a></li>
             <li><a class="dropdown-item {{ request()->routeIs('inventory.weapons.*') ? 'active' : '' }}" href="{{ route('inventory.weapons.index') }}"><i class="bi bi-shield-fill-check me-2 text-gold"></i>Inventori Senjata</a></li>
