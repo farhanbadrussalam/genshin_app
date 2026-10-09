@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Character;
 use App\Models\GameAccount;
 use App\Models\InventoryCharacter;
+use App\Models\InventoryArtifact;
 use App\Models\InventoryWeapon;
 use App\Models\Weapon;
 use App\Services\EnkaNetworkService;
@@ -87,6 +88,63 @@ class InventoryCharacterController extends Controller
             };
 
             $inventoryCharacters = $query->paginate(24)->withQueryString();
+
+            // Load Senjata dan Artefak yang sedang dipakai oleh karakter di halaman ini
+            $charIds = $inventoryCharacters->pluck('character_id');
+
+            $equippedWeapons = InventoryWeapon::with('weapon')
+                ->where('game_account_id', $activeAccount->id)
+                ->whereIn('equipped_character_id', $charIds)
+                ->get()
+                ->keyBy('equipped_character_id');
+
+            $equippedArtifacts = InventoryArtifact::with('artifactSet')
+                ->where('game_account_id', $activeAccount->id)
+                ->whereIn('equipped_character_id', $charIds)
+                ->get()
+                ->groupBy('equipped_character_id');
+
+            foreach ($inventoryCharacters as $inv) {
+                $inv->equipped_weapon = $equippedWeapons->get($inv->character_id);
+                $arts = $equippedArtifacts->get($inv->character_id, collect());
+                $inv->equipped_artifacts = $arts;
+
+                // Hitung Set Bonuses & Total CV
+                $setCounts = [];
+                $totalCv = 0.0;
+                foreach ($arts as $art) {
+                    if ($art->artifactSet) {
+                        $setName = $art->artifactSet->name;
+                        $setCounts[$setName] = ($setCounts[$setName] ?? 0) + 1;
+                    }
+                    if (!empty($art->sub_stats) && is_array($art->sub_stats)) {
+                        $cr = 0.0;
+                        $cd = 0.0;
+                        foreach ($art->sub_stats as $sub) {
+                            $k = strtolower($sub['key'] ?? '');
+                            if (in_array($k, ['crit_rate', 'critrate', 'critrate_'])) {
+                                $cr += (float) ($sub['value'] ?? 0);
+                            }
+                            if (in_array($k, ['crit_dmg', 'critdmg', 'critdmg_'])) {
+                                $cd += (float) ($sub['value'] ?? 0);
+                            }
+                        }
+                        $totalCv += ($cr * 2) + $cd;
+                    }
+                }
+
+                $activeSets = [];
+                foreach ($setCounts as $sName => $count) {
+                    if ($count >= 4) {
+                        $activeSets[] = "4-pc {$sName}";
+                    } elseif ($count >= 2) {
+                        $activeSets[] = "2-pc {$sName}";
+                    }
+                }
+
+                $inv->active_set_bonuses = $activeSets;
+                $inv->total_artifact_cv = round($totalCv, 1);
+            }
 
             // Statistik akun aktif
             $allChars = InventoryCharacter::where('game_account_id', $activeAccount->id)->get();
@@ -376,7 +434,8 @@ class InventoryCharacterController extends Controller
         $uid = $request->filled('uid') ? trim($request->input('uid')) : $account->uid;
 
         try {
-            $result = $this->enka->syncCharactersFromEnka($account, $uid);
+            // Sinkronkan karakter, senjata, dan artefak lengkap sekaligus dari Showcase Enka
+            $result = $this->enka->syncAllInventoryFromEnka($account, $uid);
 
             if ($request->wantsJson()) {
                 return response()->json($result);

@@ -629,12 +629,12 @@ class EnkaNetworkService
 
             // Coba dari Enka Network API Docs Store
             try {
-                $chars = Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/characters.json')->json();
+                $chars = $this->getEnkaCharactersMeta();
                 $nameHash = $chars[$avatarId]['NameTextMapHash'] ?? null;
                 if ($nameHash) {
-                    $loc = Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/loc.json')->json();
-                    if (!empty($loc['en'][$nameHash])) {
-                        return $loc['en'][$nameHash];
+                    $loc = $this->getEnkaLocEn();
+                    if (!empty($loc[$nameHash])) {
+                        return $loc[$nameHash];
                     }
                 }
             } catch (\Throwable $e) {
@@ -677,6 +677,11 @@ class EnkaNetworkService
             $charName  = $character->name;
 
             $syncedCharacters[$character->id] = $charName;
+
+            // Hapus artifact lama yang terpasang pada karakter ini di akun ini agar digantikan artefak baru
+            InventoryArtifact::where('game_account_id', $account->id)
+                ->where('equipped_character_id', $character->id)
+                ->delete();
 
             $equipList = $avData['equipList'] ?? [];
             foreach ($equipList as $eq) {
@@ -726,14 +731,12 @@ class EnkaNetworkService
                     }
                 }
 
-                // 6. Simpan atau Update ke inventory_artifacts
-                $artifact = InventoryArtifact::updateOrCreate(
+                // 6. Simpan artifact baru ke inventory_artifacts (artefak lama karakter sudah dihapus)
+                $artifact = InventoryArtifact::create(
                     [
                         'game_account_id'       => $account->id,
                         'equipped_character_id' => $character->id,
                         'slot_key'              => $slotKey,
-                    ],
-                    [
                         'artifact_set_id'       => $artSet->id,
                         'rarity'                => $rarity,
                         'level'                 => $level,
@@ -768,6 +771,187 @@ class EnkaNetworkService
     }
 
     /**
+     * Dapatkan metadata katalog karakter dari Enka / cache lokal disk
+     */
+    public function getEnkaCharactersMeta(): array
+    {
+        return Cache::remember('enka_characters_json', 604800, function () {
+            $backupFile = storage_path('app/enka_characters.json');
+
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) GenshinApp/1.0'])
+                    ->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/characters.json');
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (is_array($json) && !empty($json)) {
+                        try {
+                            @file_put_contents($backupFile, json_encode($json));
+                        } catch (\Throwable $e) {
+                            // Abaikan error tulis disk
+                        }
+                        return $json;
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('[EnkaNetworkService] Gagal fetch characters.json dari GitHub: ' . $e->getMessage());
+            }
+
+            // Fallback ke file backup lokal jika ada
+            if (file_exists($backupFile)) {
+                $backupContent = @file_get_contents($backupFile);
+                $decoded = json_decode($backupContent, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            return [];
+        });
+    }
+
+    /**
+     * Dapatkan kamus lokalisasi teks Enka
+     */
+    public function getEnkaLocEn(): array
+    {
+        return Cache::remember('enka_loc_en', 604800, function () {
+            $backupFile = storage_path('app/enka_loc_en.json');
+
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) GenshinApp/1.0'])
+                    ->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/loc.json');
+
+                if ($response->successful()) {
+                    $json = $response->json()['en'] ?? [];
+                    if (is_array($json) && !empty($json)) {
+                        try {
+                            @file_put_contents($backupFile, json_encode($json));
+                        } catch (\Throwable $e) {
+                            // Abaikan error tulis disk
+                        }
+                        return $json;
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('[EnkaNetworkService] Gagal fetch loc.json dari GitHub: ' . $e->getMessage());
+            }
+
+            if (file_exists($backupFile)) {
+                $backupContent = @file_get_contents($backupFile);
+                $decoded = json_decode($backupContent, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    return $decoded;
+                }
+            }
+
+            return [];
+        });
+    }
+
+    /**
+     * Ekstraksi level talenta (Normal Attack, Elemental Skill, Elemental Burst)
+     * secara akurat dari data Enka.Network, termasuk bonus konstelasi (proudSkillExtraLevelMap).
+     */
+    public function extractTalentLevels(array $avData, array $charsMeta): array
+    {
+        $avatarId   = (int) ($avData['avatarId'] ?? 0);
+        $skillMap   = $avData['skillLevelMap'] ?? [];
+        $proudExtra = $avData['proudSkillExtraLevelMap'] ?? [];
+        $depotId    = $avData['skillDepotId'] ?? null;
+
+        if (empty($skillMap)) {
+            return [
+                'talent_attack' => 1,
+                'talent_skill'  => 1,
+                'talent_burst'  => 1,
+            ];
+        }
+
+        // 1. Cari metadata karakter (tangani juga variasi elemen Traveler berdasarkan skillDepotId)
+        $meta = null;
+        if ($depotId && isset($charsMeta["{$avatarId}-{$depotId}"])) {
+            $meta = $charsMeta["{$avatarId}-{$depotId}"];
+        } elseif (isset($charsMeta[$avatarId])) {
+            $meta = $charsMeta[$avatarId];
+        } elseif (isset($charsMeta[(string)$avatarId])) {
+            $meta = $charsMeta[(string)$avatarId];
+        }
+
+        $skillOrder = $meta['SkillOrder'] ?? [];
+        $proudMap   = $meta['ProudMap'] ?? [];
+
+        $na = 1;
+        $es = 1;
+        $eb = 1;
+
+        // Opsi A: Jika SkillOrder ditemukan di metadata
+        if (!empty($skillOrder) && count($skillOrder) >= 3) {
+            $idNa = (string) $skillOrder[0];
+            $idEs = (string) $skillOrder[1];
+            $idEb = (string) $skillOrder[2];
+
+            $na = (int) ($skillMap[$idNa] ?? 1);
+            $es = (int) ($skillMap[$idEs] ?? 1);
+            $eb = (int) ($skillMap[$idEb] ?? 1);
+
+            // Tambahkan bonus level dari konstelasi jika ada
+            if (!empty($proudExtra) && !empty($proudMap)) {
+                $proudNa = (string) ($proudMap[$idNa] ?? '');
+                $proudEs = (string) ($proudMap[$idEs] ?? '');
+                $proudEb = (string) ($proudMap[$idEb] ?? '');
+
+                if ($proudNa && isset($proudExtra[$proudNa])) {
+                    $na += (int) $proudExtra[$proudNa];
+                }
+                if ($proudEs && isset($proudExtra[$proudEs])) {
+                    $es += (int) $proudExtra[$proudEs];
+                }
+                if ($proudEb && isset($proudExtra[$proudEb])) {
+                    $eb += (int) $proudExtra[$proudEb];
+                }
+            }
+        } else {
+            // Opsi B: Fallback cerdas jika SkillOrder tidak ditemukan (misal karakter baru atau format ID beda)
+            // Urutkan key skill ID secara numerik: Normal Attack < Skill < Burst
+            $sortedSkills = $skillMap;
+            ksort($sortedSkills, SORT_NUMERIC);
+            $skillValues = array_values($sortedSkills);
+
+            if (count($skillValues) >= 3) {
+                $na = (int) $skillValues[0];
+                $es = (int) $skillValues[1];
+                $eb = (int) $skillValues[2];
+            } elseif (count($skillValues) === 2) {
+                $na = (int) $skillValues[0];
+                $es = (int) $skillValues[1];
+            } elseif (count($skillValues) === 1) {
+                $na = (int) $skillValues[0];
+            }
+
+            // Jika ada bonus level konstelasi tapi proudMap tidak tersedia
+            // (C3/C5 memberikan +3 level pada Skill dan Burst)
+            if (!empty($proudExtra)) {
+                $extraValues = array_values($proudExtra);
+                if (isset($extraValues[0])) {
+                    $es += (int) $extraValues[0];
+                }
+                if (isset($extraValues[1])) {
+                    $eb += (int) $extraValues[1];
+                }
+            }
+        }
+
+        return [
+            'talent_attack' => min(15, max(1, $na)),
+            'talent_skill'  => min(15, max(1, $es)),
+            'talent_burst'  => min(15, max(1, $eb)),
+        ];
+    }
+
+    /**
      * Sinkronkan karakter showcase dari Enka.Network ke inventory_characters
      */
     public function syncCharactersFromEnka(GameAccount $account, ?string $overrideUid = null): array
@@ -787,14 +971,7 @@ class EnkaNetworkService
             ];
         }
 
-        // Cache characters.json untuk urutan skill
-        $charsMeta = Cache::remember('enka_characters_json', 86400, function () {
-            try {
-                return Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/characters.json')->json() ?? [];
-            } catch (\Throwable $e) {
-                return [];
-            }
-        });
+        $charsMeta = $this->getEnkaCharactersMeta();
 
         $syncedCount = 0;
         $syncedNames = [];
@@ -810,12 +987,7 @@ class EnkaNetworkService
             $ascension = (int) ($avData['propMap']['1002']['val'] ?? 0);
             $const     = count($avData['talentIdList'] ?? []);
 
-            $skillMap   = $avData['skillLevelMap'] ?? [];
-            $skillOrder = $charsMeta[$avatarId]['SkillOrder'] ?? [];
-
-            $na = isset($skillOrder[0]) ? ($skillMap[$skillOrder[0]] ?? 1) : 1;
-            $es = isset($skillOrder[1]) ? ($skillMap[$skillOrder[1]] ?? 1) : 1;
-            $eb = isset($skillOrder[2]) ? ($skillMap[$skillOrder[2]] ?? 1) : 1;
+            $talents   = $this->extractTalentLevels($avData, $charsMeta);
 
             InventoryCharacter::updateOrCreate(
                 [
@@ -826,9 +998,9 @@ class EnkaNetworkService
                     'level'         => $level,
                     'ascension'     => $ascension,
                     'constellation' => $const,
-                    'talent_attack' => $na,
-                    'talent_skill'  => $es,
-                    'talent_burst'  => $eb,
+                    'talent_attack' => $talents['talent_attack'],
+                    'talent_skill'  => $talents['talent_skill'],
+                    'talent_burst'  => $talents['talent_burst'],
                     'scanned_at'    => now(),
                 ]
             );
@@ -871,13 +1043,7 @@ class EnkaNetworkService
             ];
         }
 
-        $locEn = Cache::remember('enka_loc_en', 86400, function () {
-            try {
-                return Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/loc.json')->json()['en'] ?? [];
-            } catch (\Throwable $e) {
-                return [];
-            }
-        });
+        $locEn = $this->getEnkaLocEn();
 
         $syncedCount = 0;
         $syncedNames = [];
@@ -959,22 +1125,8 @@ class EnkaNetworkService
             ];
         }
 
-        // Cache kamus karakter & lokalisasi agar efisien
-        $charsMeta = Cache::remember('enka_characters_json', 86400, function () {
-            try {
-                return Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/characters.json')->json() ?? [];
-            } catch (\Throwable $e) {
-                return [];
-            }
-        });
-
-        $locEn = Cache::remember('enka_loc_en', 86400, function () {
-            try {
-                return Http::timeout(5)->get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/loc.json')->json()['en'] ?? [];
-            } catch (\Throwable $e) {
-                return [];
-            }
-        });
+        $charsMeta = $this->getEnkaCharactersMeta();
+        $locEn     = $this->getEnkaLocEn();
 
         $syncedCharsCount = 0;
         $syncedWeaponsCount = 0;
@@ -985,34 +1137,16 @@ class EnkaNetworkService
             $avatarId = (int) ($avData['avatarId'] ?? 0);
             if (!$avatarId) continue;
 
-            $charName = $this->getCharacterName($avatarId);
-
             // 1. CARI ATAU BUAT MASTER KARAKTER
-            $character = Character::where('name', $charName)
-                ->orWhere('name', 'like', "%{$charName}%")
-                ->orWhere('slug', Str::slug($charName))
-                ->first();
-
-            if (!$character) {
-                $character = Character::create([
-                    'name'        => $charName,
-                    'slug'        => Str::slug($charName),
-                    'element'     => 'Pyro',
-                    'weapon_type' => 'Sword',
-                    'rarity'      => 5,
-                ]);
-            }
+            $character = $this->findOrCreateCharacterByAvatarId($avatarId);
+            $charName  = $character->name;
 
             // SINKRONKAN INVENTORY KARAKTER
             $level     = (int) ($avData['propMap']['4001']['val'] ?? 1);
             $ascension = (int) ($avData['propMap']['1002']['val'] ?? 0);
             $const     = count($avData['talentIdList'] ?? []);
 
-            $skillMap   = $avData['skillLevelMap'] ?? [];
-            $skillOrder = $charsMeta[$avatarId]['SkillOrder'] ?? [];
-            $na = isset($skillOrder[0]) ? ($skillMap[$skillOrder[0]] ?? 1) : 1;
-            $es = isset($skillOrder[1]) ? ($skillMap[$skillOrder[1]] ?? 1) : 1;
-            $eb = isset($skillOrder[2]) ? ($skillMap[$skillOrder[2]] ?? 1) : 1;
+            $talents   = $this->extractTalentLevels($avData, $charsMeta);
 
             InventoryCharacter::updateOrCreate(
                 [
@@ -1023,15 +1157,20 @@ class EnkaNetworkService
                     'level'         => $level,
                     'ascension'     => $ascension,
                     'constellation' => $const,
-                    'talent_attack' => $na,
-                    'talent_skill'  => $es,
-                    'talent_burst'  => $eb,
+                    'talent_attack' => $talents['talent_attack'],
+                    'talent_skill'  => $talents['talent_skill'],
+                    'talent_burst'  => $talents['talent_burst'],
                     'scanned_at'    => now(),
                 ]
             );
 
             $syncedCharNames[] = $charName;
             $syncedCharsCount++;
+
+            // Hapus artifact lama milik karakter ini sebelum memasukkan artefak baru dari Enka
+            InventoryArtifact::where('game_account_id', $account->id)
+                ->where('equipped_character_id', $character->id)
+                ->delete();
 
             // 2. PROSES EQUIPMENT (SENJATA & ARTIFAK)
             $equipList = $avData['equipList'] ?? [];
@@ -1143,13 +1282,11 @@ class EnkaNetworkService
                         }
                     }
 
-                    $invArtifact = InventoryArtifact::updateOrCreate(
+                    $invArtifact = InventoryArtifact::create(
                         [
                             'game_account_id'       => $account->id,
                             'equipped_character_id' => $character->id,
                             'slot_key'              => $slotKey,
-                        ],
-                        [
                             'artifact_set_id'       => $artSet->id,
                             'rarity'                => $rarity,
                             'level'                 => $level,

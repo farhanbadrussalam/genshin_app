@@ -4,6 +4,76 @@
 @php $title = 'Inventori Karakter'; @endphp
 @include('layout.header')
 
+<style>
+  .bi-feather {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z'/%3E%3Cline x1='16' y1='8' x2='2' y2='22'/%3E%3Cline x1='17.5' y1='15' x2='9' y2='15'/%3E%3C/svg%3E") no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z'/%3E%3Cline x1='16' y1='8' x2='2' y2='22'/%3E%3Cline x1='17.5' y1='15' x2='9' y2='15'/%3E%3C/svg%3E") no-repeat center / contain;
+  }
+  .inv-gear-box {
+    background: rgba(10, 14, 24, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .weapon-icon-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .weapon-star-5 {
+    border: 1px solid #eab308;
+    background: rgba(234, 179, 8, 0.15);
+  }
+  .weapon-star-4 {
+    border: 1px solid #a855f7;
+    background: rgba(168, 85, 247, 0.15);
+  }
+  .artifact-slot-pill {
+    flex: 1;
+    text-align: center;
+    padding: 2px 2px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(228, 196, 133, 0.2);
+    font-size: 0.65rem;
+    cursor: default;
+    transition: all 0.2s;
+  }
+  .artifact-slot-pill:hover {
+    background: rgba(228, 196, 133, 0.2);
+    border-color: rgba(228, 196, 133, 0.5);
+  }
+  .artifact-slot-empty {
+    flex: 1;
+    text-align: center;
+    padding: 2px 2px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    color: #64748b;
+    font-size: 0.65rem;
+    opacity: 0.4;
+  }
+  .btn-action.view-gear {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #7dd3fc;
+  }
+  .btn-action.view-gear:hover {
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+    color: #fff;
+  }
+</style>
+
 <div class="page-container" style="padding-top: 1.5rem; padding-bottom: 4rem;">
 
   {{-- Flash Message --}}
@@ -282,10 +352,188 @@
                 @if($inv->notes)
                   <p class="inv-notes" title="{{ $inv->notes }}">{{ $inv->notes }}</p>
                 @endif
+
+                {{-- Gear & Build Overview (Senjata & Artefak) --}}
+                <div class="inv-gear-box">
+                  {{-- Senjata Terpasang --}}
+                  <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mb-2 border-bottom border-secondary border-opacity-25">
+                    @if($inv->equipped_weapon && $inv->equipped_weapon->weapon)
+                      @php
+                        $eqW = $inv->equipped_weapon;
+                        $wModel = $eqW->weapon;
+                        $isW5 = ($wModel->rarity ?? 4) === 5;
+                      @endphp
+                      <div class="d-flex align-items-center gap-2 overflow-hidden w-100">
+                        @if($wModel->icon_url)
+                          <img src="{{ $wModel->icon_url }}" alt="{{ $wModel->name }}" class="weapon-icon-sm {{ $isW5 ? 'weapon-star-5' : 'weapon-star-4' }}">
+                        @else
+                          <div class="weapon-icon-sm d-flex align-items-center justify-content-center {{ $isW5 ? 'weapon-star-5 text-warning' : 'weapon-star-4 text-purple' }}">
+                            <i class="bi bi-shield-shaded"></i>
+                          </div>
+                        @endif
+                        <div class="text-truncate flex-grow-1" style="line-height: 1.2;">
+                          <div class="small fw-bold text-truncate {{ $isW5 ? 'text-gold' : 'text-purple' }}" title="{{ $wModel->name }}" style="font-size: 0.76rem;">
+                            {{ $wModel->name }}
+                          </div>
+                          <div class="text-white-50" style="font-size: 0.68rem;">
+                            Lv. {{ $eqW->level }} <span class="text-warning">R{{ $eqW->refinement }}</span>
+                            @if($wModel->sub_stat_type)
+                              <span class="text-info ms-1">• {{ $wModel->sub_stat_type }}</span>
+                            @endif
+                          </div>
+                        </div>
+                      </div>
+                    @else
+                      <div class="small text-muted py-1 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                        <i class="bi bi-shield-x text-secondary"></i>Belum ada senjata
+                      </div>
+                    @endif
+                  </div>
+
+                  {{-- Artefak Terpasang & CV --}}
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.72rem;">
+                      <span class="text-white-50">
+                        <i class="bi bi-gem text-gold me-1"></i>Artefak ({{ $inv->equipped_artifacts->count() }}/5)
+                      </span>
+                      @if($inv->total_artifact_cv > 0)
+                        <span class="badge {{ $inv->total_artifact_cv >= 140 ? 'bg-warning text-dark' : 'bg-dark text-info border border-info border-opacity-50' }}" style="font-size: 0.65rem;" title="Total Crit Value dari Artefak">
+                          {{ $inv->total_artifact_cv }} CV
+                        </span>
+                      @endif
+                    </div>
+
+                    {{-- Set Bonus Badge --}}
+                    @if(!empty($inv->active_set_bonuses))
+                      <div class="d-flex flex-wrap gap-1 mb-2">
+                        @foreach($inv->active_set_bonuses as $setB)
+                          <span class="badge" style="background: rgba(228, 196, 133, 0.15); color: var(--genshin-gold); border: 1px solid rgba(228, 196, 133, 0.35); font-size: 0.65rem; font-weight: 500;">
+                            {{ $setB }}
+                          </span>
+                        @endforeach
+                      </div>
+                    @elseif($inv->equipped_artifacts->isNotEmpty())
+                      <div class="mb-2">
+                        <span class="badge bg-secondary bg-opacity-25 text-white-50 border border-secondary border-opacity-25" style="font-size: 0.65rem;">
+                          Campuran (Rainbow Set)
+                        </span>
+                      </div>
+                    @else
+                      <div class="mb-2 text-muted" style="font-size: 0.7rem;">
+                        Belum ada artefak terpasang
+                      </div>
+                    @endif
+
+                    {{-- Mini 5 Slot Indicator --}}
+                    @if($inv->equipped_artifacts->isNotEmpty())
+                      <div class="d-flex gap-1 justify-content-between pt-1 border-top border-secondary border-opacity-10">
+                        @php
+                          $slotIcons = [
+                            'flower'  => ['icon' => 'bi-flower1', 'label' => 'Flower'],
+                            'plume'   => ['icon' => 'bi-feather', 'label' => 'Plume'],
+                            'sands'   => ['icon' => 'bi-hourglass-split', 'label' => 'Sands'],
+                            'goblet'  => ['icon' => 'bi-cup-straw', 'label' => 'Goblet'],
+                            'circlet' => ['icon' => 'bi-gem', 'label' => 'Circlet'],
+                          ];
+                          $artBySlot = $inv->equipped_artifacts->keyBy('slot_key');
+                        @endphp
+                        @foreach($slotIcons as $sKey => $sInfo)
+                          @php $artSlot = $artBySlot->get($sKey); @endphp
+                          @if($artSlot)
+                            <div class="artifact-slot-pill" title="{{ ucfirst($sKey) }}: {{ $artSlot->artifactSet?->name }} (+{{ $artSlot->level }}) | Main: {{ $artSlot->main_stat_key }} ({{ $artSlot->main_stat_value }})">
+                              @if($sKey === 'plume')
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gold" style="display:inline-block; vertical-align:-1px;">
+                                  <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                                  <line x1="16" y1="8" x2="2" y2="22"></line>
+                                  <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                                </svg>
+                              @else
+                                <i class="bi {{ $sInfo['icon'] }} text-gold" style="font-size: 0.72rem;"></i>
+                              @endif
+                              <div style="font-size: 0.58rem; color: #cbd5e1; line-height: 1;">+{{ $artSlot->level }}</div>
+                            </div>
+                          @else
+                            <div class="artifact-slot-empty" title="{{ ucfirst($sKey) }}: Kosong">
+                              @if($sKey === 'plume')
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; opacity:0.6;">
+                                  <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                                  <line x1="16" y1="8" x2="2" y2="22"></line>
+                                  <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                                </svg>
+                              @else
+                                <i class="bi {{ $sInfo['icon'] }}" style="font-size: 0.72rem;"></i>
+                              @endif
+                              <div style="font-size: 0.58rem; line-height: 1;">-</div>
+                            </div>
+                          @endif
+                        @endforeach
+                      </div>
+                    @endif
+                  </div>
+                </div>
+
               </div>
 
               {{-- Footer Action Buttons --}}
               <div class="inv-footer">
+                @php
+                  $gearData = [
+                    'char_name'      => $char?->name,
+                    'element'        => $char?->element,
+                    'element_color'  => $elementColor,
+                    'icon_url'       => $char?->icon_url,
+                    'level'          => $inv->level,
+                    'max_level'      => $inv->max_level,
+                    'constellation'  => $inv->constellation,
+                    'talents'        => [
+                      'na' => $inv->talent_attack,
+                      'es' => $inv->talent_skill,
+                      'eb' => $inv->talent_burst,
+                    ],
+                    'notes'          => $inv->notes,
+                    'weapon'         => ($inv->equipped_weapon && $inv->equipped_weapon->weapon) ? [
+                      'name'           => $inv->equipped_weapon->weapon->name,
+                      'type'           => $inv->equipped_weapon->weapon->type,
+                      'rarity'         => $inv->equipped_weapon->weapon->rarity ?? 4,
+                      'level'          => $inv->equipped_weapon->level,
+                      'refinement'     => $inv->equipped_weapon->refinement,
+                      'base_atk'       => $inv->equipped_weapon->weapon->base_atk,
+                      'sub_stat_type'  => $inv->equipped_weapon->weapon->sub_stat_type,
+                      'sub_stat_value' => $inv->equipped_weapon->weapon->sub_stat_value,
+                      'passive_name'   => $inv->equipped_weapon->weapon->passive_name,
+                      'passive_desc'   => $inv->equipped_weapon->weapon->passive_desc,
+                      'icon_url'       => $inv->equipped_weapon->weapon->icon_url,
+                    ] : null,
+                    'total_cv'       => $inv->total_artifact_cv,
+                    'active_sets'    => $inv->active_set_bonuses,
+                    'artifacts'      => $inv->equipped_artifacts->map(function($a) {
+                      $cv = 0;
+                      foreach ($a->sub_stats ?? [] as $sub) {
+                        $k = strtolower($sub['key'] ?? '');
+                        if (in_array($k, ['crit_rate', 'critrate', 'critrate_'])) $cv += ((float)$sub['value'] * 2);
+                        if (in_array($k, ['crit_dmg', 'critdmg', 'critdmg_'])) $cv += (float)$sub['value'];
+                      }
+                      return [
+                        'slot'            => $a->slot_key,
+                        'set_name'        => $a->artifactSet?->name ?? 'Unknown Set',
+                        'rarity'          => $a->rarity,
+                        'level'           => $a->level,
+                        'main_stat'       => $a->main_stat_key,
+                        'main_stat_value' => $a->main_stat_value,
+                        'sub_stats'       => $a->sub_stats ?? [],
+                        'cv'              => round($cv, 1),
+                        'score'           => $a->score,
+                        'score_rating'    => $a->score_rating,
+                      ];
+                    })->values(),
+                  ];
+                @endphp
+                <button type="button" 
+                        class="btn-action view-gear btn-view-gear" 
+                        title="Lihat Detail Build & Artefak"
+                        data-gear="{{ json_encode($gearData) }}">
+                  <i class="bi bi-shield-check me-1"></i>Gear
+                </button>
                 <button class="btn-action edit"
                         title="Edit Build Karakter"
                         data-bs-toggle="modal"
@@ -620,12 +868,16 @@
 
         <div class="modal-body">
           <div class="p-3 mb-3 rounded" style="background: rgba(229,160,41,0.08); border: 1px solid rgba(229,160,41,0.25);">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="badge" style="background: #22c55e; color: #fff; font-size: 0.72rem;">✨ Level & Talent Asli</span>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <span class="badge" style="background: #22c55e; color: #fff; font-size: 0.72rem;">✨ Karakter, Senjata & Artefak</span>
               <span class="badge" style="background: #3b82f6; color: #fff; font-size: 0.72rem;">🔒 Tanpa Cookie / Password</span>
+              <span class="badge" style="background: #eab308; color: #111; font-weight: 700; font-size: 0.72rem;">🔄 Auto-Replace Artefak Lama</span>
             </div>
-            <p class="mb-0 text-white" style="font-size: 0.82rem; line-height: 1.5;">
-              Tarik otomatis data karakter yang sedang Anda pajang di <strong>Character Showcase</strong> in-game profil Genshin Impact lengkap dengan level, ascension, konstelasi, serta level talent (Normal Attack, Skill, Burst).
+            <p class="mb-1 text-white" style="font-size: 0.82rem; line-height: 1.5;">
+              Tarik otomatis data karakter yang sedang Anda pajang di <strong>Character Showcase</strong> in-game profil Genshin Impact lengkap dengan level, talent, serta <strong>senjata dan artefak aktif</strong>.
+            </p>
+            <p class="mb-0 text-white-50" style="font-size: 0.76rem; line-height: 1.4;">
+              <i class="bi bi-info-circle text-warning me-1"></i>Artefak lama pada karakter showcase akan otomatis digantikan/dihapus dengan artefak baru. Jika baru mengganti artefak di dalam game, tunggu 1–2 menit agar cache server Enka ter-update.
             </p>
           </div>
 
@@ -660,6 +912,65 @@
   </div>
 </div>
 @endif
+
+{{-- MODAL DETAIL GEAR & BUILD KARAKTER --}}
+<div class="modal fade" id="modalCharGearDetail" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content genshin-modal-content" style="border: 1px solid rgba(228, 196, 133, 0.4); box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+      <div class="modal-header genshin-modal-header" style="border-bottom: 1px solid rgba(228, 196, 133, 0.2);">
+        <div class="d-flex align-items-center gap-3">
+          <img id="mgCharAvatar" src="" alt="" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover; border: 2px solid var(--genshin-gold);">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="modal-title font-display text-gold mb-0" id="mgCharName">Nama Karakter</h5>
+              <span class="badge" id="mgCharElement" style="font-size: 0.72rem;">Element</span>
+              <span class="badge bg-warning text-dark fw-bold" id="mgCharConst" style="font-size: 0.72rem;">C0</span>
+            </div>
+            <div class="small text-white-50 mt-0.5">
+              <span id="mgCharLevel">Lv. 90/90</span> • 
+              <span id="mgCharTalents">NA 10 | ES 10 | EB 10</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        
+        {{-- Section 1: Senjata Terpasang --}}
+        <div class="mb-4">
+          <h6 class="text-gold font-display mb-2 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+            <i class="bi bi-shield-shaded text-gold"></i>Senjata yang Digunakan
+          </h6>
+          <div id="mgWeaponBox" class="p-3 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <!-- Dinamis via JS -->
+          </div>
+        </div>
+
+        {{-- Section 2: Artefak Terpasang & Analisis --}}
+        <div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h6 class="text-gold font-display mb-0 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+              <i class="bi bi-gem text-gold"></i>Rincian 5 Slot Artefak
+            </h6>
+            <div class="d-flex align-items-center gap-2" id="mgArtifactSummaryBadges">
+              <!-- Dinamis via JS -->
+            </div>
+          </div>
+
+          <div id="mgArtifactsGrid" class="row g-2">
+            <!-- Dinamis via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer genshin-modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 @push('scripts')
 <script>
@@ -731,6 +1042,116 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+  // Modal Gear Detail Handler
+  const modalGear = new bootstrap.Modal(document.getElementById('modalCharGearDetail'));
+  document.querySelectorAll('.btn-view-gear').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const dataStr = this.getAttribute('data-gear');
+      if (!dataStr) return;
+      const data = JSON.parse(dataStr);
+
+      // 1. Header Karakter
+      document.getElementById('mgCharName').textContent = data.char_name || 'Karakter';
+      document.getElementById('mgCharAvatar').src = data.icon_url || '';
+      document.getElementById('mgCharElement').textContent = data.element || 'Unknown';
+      document.getElementById('mgCharElement').style.backgroundColor = data.element_color || '#94a3b8';
+      document.getElementById('mgCharConst').textContent = 'C' + (data.constellation ?? 0);
+      document.getElementById('mgCharLevel').textContent = `Lv. ${data.level || 1}/${data.max_level || 90}`;
+      document.getElementById('mgCharTalents').textContent = `NA ${data.talents.na} • ES ${data.talents.es} • EB ${data.talents.eb}`;
+
+      // 2. Senjata
+      const wBox = document.getElementById('mgWeaponBox');
+      if (data.weapon) {
+        const w = data.weapon;
+        const isW5 = (w.rarity === 5);
+        wBox.innerHTML = `
+          <div class="d-flex align-items-start gap-3">
+            ${w.icon_url ? `<img src="${w.icon_url}" class="rounded" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid ${isW5 ? '#eab308' : '#a855f7'}; background: ${isW5 ? '#eab30820' : '#a855f720'};">` : ''}
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                <span class="fw-bold ${isW5 ? 'text-gold' : 'text-purple'}" style="font-size: 0.95rem;">${w.name} (${w.rarity}★)</span>
+                <span class="badge bg-warning text-dark fw-bold">Lv. ${w.level} • Refinement ${w.refinement}</span>
+              </div>
+              <div class="small text-secondary mt-1">
+                Base ATK: <strong class="text-white">${w.base_atk || '-'}</strong>
+                ${w.sub_stat_type ? ` • Substat: <strong class="text-info">${w.sub_stat_type} (${w.sub_stat_value || '-'})</strong>` : ''}
+              </div>
+              ${w.passive_name ? `
+                <div class="mt-2 p-2 rounded" style="background: rgba(0,0,0,0.3); font-size: 0.76rem; border-left: 3px solid ${isW5 ? '#eab308' : '#a855f7'};">
+                  <strong class="text-white">${w.passive_name}:</strong> <span class="text-muted">${w.passive_desc || ''}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        wBox.innerHTML = '<div class="text-muted small py-2"><i class="bi bi-info-circle me-1"></i>Belum ada senjata yang terpasang pada karakter ini di inventori.</div>';
+      }
+
+      // 3. Artefak Summary Badges
+      const badgesBox = document.getElementById('mgArtifactSummaryBadges');
+      let badgesHtml = '';
+      if (data.total_cv > 0) {
+        const cvColor = data.total_cv >= 140 ? 'bg-warning text-dark' : 'bg-dark text-info border border-info';
+        badgesHtml += `<span class="badge ${cvColor}" style="font-size: 0.72rem;">Total ${data.total_cv} CV</span>`;
+      }
+      if (data.active_sets && data.active_sets.length > 0) {
+        data.active_sets.forEach(s => {
+          badgesHtml += `<span class="badge" style="background: rgba(228, 196, 133, 0.15); color: var(--genshin-gold); border: 1px solid rgba(228, 196, 133, 0.4); font-size: 0.72rem;">${s}</span>`;
+        });
+      }
+      badgesBox.innerHTML = badgesHtml;
+
+      // 4. Artefak Grid 5 Slot
+      const gridBox = document.getElementById('mgArtifactsGrid');
+      if (data.artifacts && data.artifacts.length > 0) {
+        let gridHtml = '';
+        const slotNames = {
+          'flower': { name: 'Flower of Life', icon: '<i class="bi bi-flower1 me-1 text-gold"></i>' },
+          'plume': { name: 'Plume of Death', icon: '<i class="bi bi-feather me-1 text-gold"></i>' },
+          'sands': { name: 'Sands of Eon', icon: '<i class="bi bi-hourglass-split me-1 text-gold"></i>' },
+          'goblet': { name: 'Goblet of Eonothem', icon: '<i class="bi bi-cup-straw me-1 text-gold"></i>' },
+          'circlet': { name: 'Circlet of Logos', icon: '<i class="bi bi-gem me-1 text-gold"></i>' }
+        };
+
+        data.artifacts.forEach(art => {
+          let subsHtml = '';
+          if (art.sub_stats && art.sub_stats.length > 0) {
+            art.sub_stats.forEach(sb => {
+              const isCrit = (sb.key === 'crit_rate' || sb.key === 'crit_dmg');
+              subsHtml += `<span class="badge ${isCrit ? 'bg-dark text-info border border-info border-opacity-50' : 'bg-secondary bg-opacity-25 text-white-50'}" style="font-size: 0.68rem;">${sb.key}: ${sb.value}</span> `;
+            });
+          }
+
+          gridHtml += `
+            <div class="col-12 col-md-6">
+              <div class="p-2.5 rounded h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(228, 196, 133, 0.2);">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="badge bg-dark text-gold border border-warning" style="font-size: 0.68rem;">${slotNames[art.slot] ? (slotNames[art.slot].icon + slotNames[art.slot].name) : art.slot}</span>
+                  <div class="d-flex align-items-center gap-1">
+                    ${art.cv > 0 ? `<span class="badge bg-info text-dark" style="font-size: 0.65rem;">${art.cv} CV</span>` : ''}
+                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">+${art.level}</span>
+                  </div>
+                </div>
+                <div class="fw-bold text-white small mb-1">${art.set_name}</div>
+                <div class="small mb-1.5" style="color: var(--genshin-gold); font-size: 0.78rem;">
+                  Main Stat: <strong>${art.main_stat}</strong> (${art.main_stat_value || '-'})
+                </div>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                  ${subsHtml || '<span class="text-muted" style="font-size: 0.68rem;">Tidak ada substat</span>'}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        gridBox.innerHTML = gridHtml;
+      } else {
+        gridBox.innerHTML = '<div class="col-12 text-muted small py-3 text-center">Belum ada artefak yang terpasang pada karakter ini.</div>';
+      }
+
+      modalGear.show();
+    });
+  });
 });
 </script>
 @endpush

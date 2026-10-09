@@ -8,6 +8,7 @@ use App\Models\InventoryCharacter;
 use App\Models\InventoryMaterial;
 use App\Models\InventoryWeapon;
 use App\Services\GoodFormatService;
+use App\Services\GeminiExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,11 +19,12 @@ use Illuminate\View\View;
 class GoodFormatController extends Controller
 {
     public function __construct(
-        protected GoodFormatService $goodService
+        protected GoodFormatService $goodService,
+        protected GeminiExportService $geminiService
     ) {}
 
     /**
-     * Tampilkan halaman utama Ekspor & Impor format GOOD
+     * Tampilkan halaman utama Ekspor & Impor format GOOD serta Gemini AI Notebook
      */
     public function index(Request $request): View
     {
@@ -53,7 +55,7 @@ class GoodFormatController extends Controller
         }
 
         return view('inventory.good', [
-            'title'         => 'Export / Import Format GOOD',
+            'title'         => 'Export / Import Data & Gemini AI Notebook',
             'accounts'      => $accounts,
             'activeAccount' => $activeAccount,
             'accountStats'  => $accountStats,
@@ -76,11 +78,16 @@ class GoodFormatController extends Controller
         $account = GameAccount::findOrFail($validated['game_account_id']);
 
         $options = [
-            'include_characters' => $request->boolean('include_characters', true),
-            'include_weapons'    => $request->boolean('include_weapons', true),
-            'include_artifacts'  => $request->boolean('include_artifacts', true),
-            'include_materials'  => $request->boolean('include_materials', true),
+            'include_characters' => $request->boolean('include_characters'),
+            'include_weapons'    => $request->boolean('include_weapons'),
+            'include_artifacts'  => $request->boolean('include_artifacts'),
+            'include_materials'  => $request->boolean('include_materials'),
         ];
+
+        if (!$options['include_characters'] && !$options['include_weapons'] && !$options['include_artifacts'] && !$options['include_materials']) {
+            return redirect()->route('inventory.good.index', ['account_id' => $account->id])
+                ->with('error', 'Silakan pilih minimal satu komponen (karakter, senjata, artefak, atau material) untuk diekspor.');
+        }
 
         $goodData = $this->goodService->export($account, $options);
         $jsonString = json_encode($goodData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -111,11 +118,18 @@ class GoodFormatController extends Controller
         $account = GameAccount::findOrFail($validated['game_account_id']);
 
         $options = [
-            'include_characters' => $request->boolean('include_characters', true),
-            'include_weapons'    => $request->boolean('include_weapons', true),
-            'include_artifacts'  => $request->boolean('include_artifacts', true),
-            'include_materials'  => $request->boolean('include_materials', true),
+            'include_characters' => $request->boolean('include_characters'),
+            'include_weapons'    => $request->boolean('include_weapons'),
+            'include_artifacts'  => $request->boolean('include_artifacts'),
+            'include_materials'  => $request->boolean('include_materials'),
         ];
+
+        if (!$options['include_characters'] && !$options['include_weapons'] && !$options['include_artifacts'] && !$options['include_materials']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Silakan pilih minimal satu komponen untuk diekspor.',
+            ], 422);
+        }
 
         $goodData = $this->goodService->export($account, $options);
 
@@ -127,6 +141,140 @@ class GoodFormatController extends Controller
                 'weapons'    => count($goodData['weapons'] ?? []),
                 'artifacts'  => count($goodData['artifacts'] ?? []),
                 'materials'  => count($goodData['materials'] ?? []),
+            ],
+        ]);
+    }
+
+    /**
+     * Ekspor data terstruktur super detail untuk Google Gemini / Jupyter / Colab Notebook (JSON)
+     */
+    public function exportGeminiJson(Request $request): Response|RedirectResponse
+    {
+        $validated = $request->validate([
+            'game_account_id'    => 'required|exists:game_accounts,id',
+            'include_characters' => 'nullable|boolean',
+            'include_weapons'    => 'nullable|boolean',
+            'include_artifacts'  => 'nullable|boolean',
+            'include_materials'  => 'nullable|boolean',
+        ]);
+
+        $account = GameAccount::findOrFail($validated['game_account_id']);
+
+        $options = [
+            'include_characters' => $request->boolean('include_characters'),
+            'include_weapons'    => $request->boolean('include_weapons'),
+            'include_artifacts'  => $request->boolean('include_artifacts'),
+            'include_materials'  => $request->boolean('include_materials'),
+        ];
+
+        if (!$options['include_characters'] && !$options['include_weapons'] && !$options['include_artifacts'] && !$options['include_materials']) {
+            return redirect()->route('inventory.good.index', ['account_id' => $account->id])
+                ->with('error', 'Silakan pilih minimal satu komponen untuk diekspor ke format Gemini Notebook.');
+        }
+
+        $data = $this->geminiService->exportData($account, $options);
+        $jsonString = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $safeNickname = Str::slug($account->nickname ?: 'account');
+        $filename = sprintf('Genshin_Gemini_Notebook_%s_%s_%s.json', $safeNickname, $account->uid ?: $account->id, date('Ymd_His'));
+
+        return response($jsonString, 200, [
+            'Content-Type'        => 'application/json; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control'       => 'no-cache, private',
+        ]);
+    }
+
+    /**
+     * Ekspor data dalam format Markdown siap pakai untuk Prompt Gemini / NotebookLM (.md)
+     */
+    public function exportGeminiMarkdown(Request $request): Response|RedirectResponse
+    {
+        $validated = $request->validate([
+            'game_account_id'    => 'required|exists:game_accounts,id',
+            'include_characters' => 'nullable|boolean',
+            'include_weapons'    => 'nullable|boolean',
+            'include_artifacts'  => 'nullable|boolean',
+            'include_materials'  => 'nullable|boolean',
+        ]);
+
+        $account = GameAccount::findOrFail($validated['game_account_id']);
+
+        $options = [
+            'include_characters' => $request->boolean('include_characters'),
+            'include_weapons'    => $request->boolean('include_weapons'),
+            'include_artifacts'  => $request->boolean('include_artifacts'),
+            'include_materials'  => $request->boolean('include_materials'),
+        ];
+
+        if (!$options['include_characters'] && !$options['include_weapons'] && !$options['include_artifacts'] && !$options['include_materials']) {
+            return redirect()->route('inventory.good.index', ['account_id' => $account->id])
+                ->with('error', 'Silakan pilih minimal satu komponen untuk diekspor ke format Gemini Markdown.');
+        }
+
+        $mdString = $this->geminiService->exportMarkdown($account, $options);
+
+        $safeNickname = Str::slug($account->nickname ?: 'account');
+        $filename = sprintf('Genshin_Gemini_Prompt_%s_%s_%s.md', $safeNickname, $account->uid ?: $account->id, date('Ymd_His'));
+
+        return response($mdString, 200, [
+            'Content-Type'        => 'text/markdown; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control'       => 'no-cache, private',
+        ]);
+    }
+
+    /**
+     * Preview konten ekspor Gemini (JSON atau Markdown)
+     */
+    public function previewGemini(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'game_account_id'    => 'required|exists:game_accounts,id',
+            'include_characters' => 'nullable|boolean',
+            'include_weapons'    => 'nullable|boolean',
+            'include_artifacts'  => 'nullable|boolean',
+            'include_materials'  => 'nullable|boolean',
+            'format'             => 'nullable|in:json,markdown',
+        ]);
+
+        $account = GameAccount::findOrFail($validated['game_account_id']);
+
+        $options = [
+            'include_characters' => $request->boolean('include_characters'),
+            'include_weapons'    => $request->boolean('include_weapons'),
+            'include_artifacts'  => $request->boolean('include_artifacts'),
+            'include_materials'  => $request->boolean('include_materials'),
+        ];
+
+        if (!$options['include_characters'] && !$options['include_weapons'] && !$options['include_artifacts'] && !$options['include_materials']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Silakan pilih minimal satu komponen untuk diekspor.',
+            ], 422);
+        }
+
+        $format = $request->input('format', 'json');
+
+        if ($format === 'markdown') {
+            $content = $this->geminiService->exportMarkdown($account, $options);
+            return response()->json([
+                'success' => true,
+                'format'  => 'markdown',
+                'data'    => $content,
+            ]);
+        }
+
+        $data = $this->geminiService->exportData($account, $options);
+        return response()->json([
+            'success' => true,
+            'format'  => 'json',
+            'data'    => $data,
+            'summary' => [
+                'characters' => count($data['characters'] ?? []),
+                'weapons'    => count($data['weapons_inventory'] ?? []),
+                'artifacts'  => count($data['artifacts_inventory'] ?? []),
+                'materials'  => count($data['materials_inventory'] ?? []),
             ],
         ]);
     }
@@ -180,11 +328,16 @@ class GoodFormatController extends Controller
 
         $options = [
             'mode'              => $validated['mode'],
-            'import_characters' => $request->boolean('import_characters', true),
-            'import_weapons'    => $request->boolean('import_weapons', true),
-            'import_artifacts'  => $request->boolean('import_artifacts', true),
-            'import_materials'  => $request->boolean('import_materials', true),
+            'import_characters' => $request->boolean('import_characters'),
+            'import_weapons'    => $request->boolean('import_weapons'),
+            'import_artifacts'  => $request->boolean('import_artifacts'),
+            'import_materials'  => $request->boolean('import_materials'),
         ];
+
+        if (!$options['import_characters'] && !$options['import_weapons'] && !$options['import_artifacts'] && !$options['import_materials']) {
+            return redirect()->route('inventory.good.index', ['account_id' => $account->id])
+                ->with('error', 'Silakan pilih minimal satu komponen yang ingin diimpor.');
+        }
 
         $result = $this->goodService->import($account, $goodData, $options);
 

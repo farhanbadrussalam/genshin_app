@@ -51,12 +51,16 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\InventoryDashboardController::class, 'index'])->name('dashboard');
     Route::post('sync-all', [\App\Http\Controllers\InventoryDashboardController::class, 'syncAll'])->name('sync-all');
 
-    // ─── GOOD Format: Export & Import ──────────────────────────
+    // ─── GOOD & Gemini Format: Export & Import ─────────────────
     Route::prefix('good')->name('good.')->group(function () {
         Route::get('/', [GoodFormatController::class, 'index'])->name('index');
         Route::post('export', [GoodFormatController::class, 'export'])->name('export');
         Route::post('export-json', [GoodFormatController::class, 'exportJson'])->name('export-json');
         Route::post('import', [GoodFormatController::class, 'import'])->name('import');
+        // Gemini AI & Data Notebook Export
+        Route::post('gemini-export-json', [GoodFormatController::class, 'exportGeminiJson'])->name('gemini-export-json');
+        Route::post('gemini-export-markdown', [GoodFormatController::class, 'exportGeminiMarkdown'])->name('gemini-export-markdown');
+        Route::post('gemini-preview', [GoodFormatController::class, 'previewGemini'])->name('gemini-preview');
     });
 
     Route::get('characters', [InventoryCharacterController::class, 'index'])->name('characters.index');
