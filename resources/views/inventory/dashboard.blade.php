@@ -360,6 +360,134 @@
       </div>
     </div>
 
+    {{-- Card Baru: Material Farming Buka Hari Ini --}}
+    <div class="dashboard-panel-box mb-4 animate-fade-in-up">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <h5 class="panel-header-title mb-0">
+              <i class="bi bi-calendar-check-fill text-gold me-2"></i>Material Farming Buka Hari Ini
+            </h5>
+            <span class="badge px-2.5 py-1" style="background: rgba(200, 170, 110, 0.16); color: #f6e6ba; border: 1px solid rgba(200, 170, 110, 0.45); font-weight: 600; font-size: 0.75rem;">
+              <i class="bi bi-calendar-event me-1"></i>{{ $todayDateFormatted }}
+            </span>
+            @if($todayDomainsCount > 0)
+              <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.72rem;">
+                <i class="bi bi-lightning-fill me-0.5"></i>{{ $todayDomainsCount }} Material Terjadwal Buka Hari Ini
+              </span>
+            @endif
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-secondary);">
+            Material dari task aktif kamu yang memiliki jadwal domain dan buka hari ini ({{ $todayDayName }}).
+          </span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          {{-- Filter Buttons --}}
+          @if($todayDomainsCount > 1)
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary today-filter-btn active" onclick="filterTodayMaterials('all', this)">
+              Semua ({{ $todayDomainsCount }})
+            </button>
+            <button type="button" class="btn btn-outline-secondary today-filter-btn" onclick="filterTodayMaterials('talent', this)">
+              <i class="bi bi-book me-1"></i>Buku Talenta
+            </button>
+            <button type="button" class="btn btn-outline-secondary today-filter-btn" onclick="filterTodayMaterials('weapon', this)">
+              <i class="bi bi-shield me-1"></i>Material Senjata
+            </button>
+          </div>
+          @endif
+
+          <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm ms-1" title="Buka Detail Rute di Farming Planner">
+            <span>Farming Planner</span>
+            <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+
+      {{-- Domain Grid Cards --}}
+      <div class="row g-3" id="todayDomainsContainer">
+        @forelse($todayDomains as $dom)
+          @php
+            $isTaskNeeded = $dom['has_needed_tasks'];
+            $filterClass = ($isTaskNeeded ? 'today-is-task ' : '') . 'today-type-' . $dom['type'];
+          @endphp
+          <div class="col-12 col-md-6 col-xl-4 today-domain-col {{ $filterClass }}">
+            <div class="today-domain-card h-100 {{ $isTaskNeeded ? 'domain-needed-border' : '' }}">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2.5 pb-2 border-bottom border-secondary border-opacity-15">
+                <div class="overflow-hidden">
+                  <div class="d-flex align-items-center gap-1.5 mb-1">
+                    <span class="badge {{ $dom['type'] === 'talent' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-info-subtle text-info border border-info-subtle' }} px-1.5 py-0.5" style="font-size: 0.65rem;">
+                      <i class="bi {{ $dom['type'] === 'talent' ? 'bi-book' : 'bi-shield' }} me-1"></i>{{ $dom['type_name'] }}
+                    </span>
+                  </div>
+                  <div class="text-white fw-bold small text-truncate" title="{{ $dom['domain'] }}">
+                    {{ $dom['domain'] }}
+                  </div>
+                </div>
+
+                @if($isTaskNeeded)
+                  <span class="badge bg-warning text-dark px-2 py-1 fw-bold flex-shrink-0" style="font-size: 0.68rem;">
+                    <i class="bi bi-pin-angle-fill me-0.5"></i>Untuk Task
+                  </span>
+                @endif
+              </div>
+
+              {{-- Materials in Domain --}}
+              <div class="d-flex flex-column gap-1.5">
+                @foreach($dom['materials'] as $mItem)
+                  @php
+                    $mat = $mItem['material'];
+                  @endphp
+                  <div class="today-mat-item d-flex align-items-center justify-content-between gap-2 rounded {{ $mItem['is_needed_by_task'] ? 'mat-needed-highlight' : '' }}">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                      <div class="today-mat-thumb">
+                        @if($mat->images)
+                          <img src="{{ $mat->images }}" width="28" height="28" class="rounded" style="object-fit: cover;" alt="{{ $mat->name }}">
+                        @else
+                          <i class="bi bi-gem text-gold"></i>
+                        @endif
+                      </div>
+                      <div class="overflow-hidden">
+                        <div class="text-white small fw-semibold text-truncate" style="font-size: 0.78rem;">
+                          {{ $mat->name }}
+                        </div>
+                        <div class="d-flex align-items-center gap-1.5 flex-wrap" style="font-size: 0.68rem; color: #94a3b8;">
+                          <span>Stok: <strong class="text-light">{{ number_format($mItem['owned']) }}</strong></span>
+                          @if($mItem['is_needed_by_task'])
+                            <span class="text-secondary">&bull;</span>
+                            <span class="text-gold text-truncate">Untuk: {{ implode(', ', $mItem['tasks']) }}</span>
+                          @endif
+                        </div>
+                      </div>
+                    </div>
+
+                    @if($mItem['is_needed_by_task'] && $mItem['missing'] > 0)
+                      <span class="badge badge-kurang-sm flex-shrink-0">
+                        -{{ number_format($mItem['missing']) }}
+                      </span>
+                    @endif
+                  </div>
+                @endforeach
+              </div>
+            </div>
+          </div>
+        @empty
+          <div class="col-12">
+            <div class="text-center py-4 px-3 rounded" style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(200, 170, 110, 0.25);">
+              <i class="bi bi-calendar-x text-gold fs-3 d-block mb-2"></i>
+              <div class="text-white fw-bold mb-1">Tidak Ada Material Task Terjadwal yang Buka Hari Ini ({{ $todayDayName }})</div>
+              <div class="text-muted small mb-3">Material yang dibutuhkan task aktif Anda saat ini berotasi pada hari lain (Senin, Kamis, atau Minggu) atau merupakan drop open world.</div>
+              <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm d-inline-flex">
+                <span>Lihat Jadwal Lengkap di Farming Planner</span>
+                <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        @endforelse
+      </div>
+    </div>
+
     {{-- Visual Breakdown: 3 Balanced Columns (Elemen, Tipe Senjata, Slot Artefak) --}}
     <div class="row g-3 mb-4 animate-fade-in-up">
       {{-- Col 1: Distribusi Elemen Karakter --}}
@@ -780,10 +908,92 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+<style>
+  .today-domain-card {
+    background: rgba(18, 22, 36, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.2s ease;
+  }
+  .today-domain-card:hover {
+    background: rgba(24, 30, 48, 0.95);
+    border-color: rgba(200, 170, 110, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+  .domain-needed-border {
+    border-color: rgba(234, 179, 8, 0.55) !important;
+    box-shadow: 0 0 16px rgba(234, 179, 8, 0.12);
+  }
+  .today-mat-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 10px;
+    transition: all 0.15s ease;
+  }
+  .today-mat-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(200, 170, 110, 0.2);
+  }
+  .mat-needed-highlight {
+    background: rgba(234, 179, 8, 0.09) !important;
+    border-color: rgba(234, 179, 8, 0.3) !important;
+  }
+  .today-mat-thumb {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(200, 170, 110, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .today-filter-btn {
+    font-size: 0.76rem !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #cbd5e1 !important;
+  }
+  .today-filter-btn.active {
+    background: rgba(200, 170, 110, 0.22) !important;
+    border-color: #c8aa6e !important;
+    color: #ffffff !important;
+  }
+  .badge-kurang-sm {
+    background: #f59e0b !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 0.72rem !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3) !important;
+  }
+</style>
 @endpush
 
 @push('scripts')
 <script>
+  window.filterTodayMaterials = function(type, btn) {
+    $('.today-filter-btn').removeClass('active');
+    $(btn).addClass('active');
+
+    if (type === 'all') {
+      $('.today-domain-col').fadeIn(200);
+    } else if (type === 'task') {
+      $('.today-domain-col').hide();
+      $('.today-domain-col.today-is-task').fadeIn(200);
+    } else if (type === 'talent') {
+      $('.today-domain-col').hide();
+      $('.today-domain-col.today-type-talent').fadeIn(200);
+    } else if (type === 'weapon') {
+      $('.today-domain-col').hide();
+      $('.today-domain-col.today-type-weapon').fadeIn(200);
+    }
+  };
   $(function () {
     const $form = $('#formSyncAllInventory');
     const $btn = $('#btnSubmitSyncAll');

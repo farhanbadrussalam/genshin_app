@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\task;
 use App\Models\material;
 use App\Models\subTask;
+use App\Models\Character;
+use App\Models\Weapon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +18,8 @@ class taskController extends Controller
      */
     public function index(): Response
     {
+        $data['characters'] = Character::where('is_active', true)->orderBy('name')->get(['id', 'name', 'element', 'weapon_type', 'icon_url', 'rarity']);
+        $data['weapons'] = Weapon::orderBy('name')->get(['id', 'name', 'type', 'rarity', 'icon_url']);
         $data['dataMaterial'] = material::orderby('familie_id', 'ASC')->orderby('name', 'ASC')->get();
         $data['dataTask'] = task::with('sub_task.material')
                             ->orderby('prioritas', 'ASC')
@@ -28,9 +32,10 @@ class taskController extends Controller
             $statusUpgrade = true;
             foreach ($task->sub_task as $keysubtask => $subtask) {
                 $material = $subtask->material;
+                if (!$material) continue;
                 
-                $source = json_decode($material->source);
-                if(in_array("Didapatkan melalui Craft", $source)){
+                $source = json_decode($material->source ?? '[]');
+                if(is_array($source) && in_array("Didapatkan melalui Craft", $source)){
                     $hasilCraft = 0;
                     $jumlahCraft = 0;
                     $arrSumberCraft = array();
@@ -42,25 +47,26 @@ class taskController extends Controller
                             $jumlahCraft = $hasilCraft;
                             array_push($arrSumberCraft, $sumberCraft);
                         }
-                        
                     }
                     $material['hasilCraft'] = $jumlahCraft;
                     $material['sumberCraft'] = $arrSumberCraft;
                 }
                 
-                $dimiliki = $material->amount;
-                $dibutuhkan = $subtask->amount;
-                isset($material['hasilCraft']) ? $dimiliki += $material['hasilCraft'] : null;
+                $dimiliki = $material->amount ?? 0;
+                $dibutuhkan = $subtask->amount ?? 0;
+                if (isset($material['hasilCraft'])) {
+                    $dimiliki += $material['hasilCraft'];
+                }
 
                 if($dimiliki >= $dibutuhkan) {
                     $statusUpgrade = $statusUpgrade == false ? false : true;
-                }else{
+                } else {
                     $statusUpgrade = false;
                 }
             }
             $task['statusUpgrade'] = $statusUpgrade;
         }
-        $data['title'] = 'Task Upgraded';
+        $data['title'] = 'Task Tracker';
         return Response(view('task.index', $data));
     }
 
@@ -69,7 +75,7 @@ class taskController extends Controller
      */
     public function create(): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -77,29 +83,43 @@ class taskController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $data = array(
+        $request->validate([
+            'nameTask' => 'required|string|max:255',
+            'prioritas' => 'required|integer|min:1',
+        ]);
+
+        $imageUrl = $request->urlImage;
+        if (empty($imageUrl)) {
+            if ($request->has('target_character_id') && !empty($request->target_character_id)) {
+                $char = Character::find($request->target_character_id);
+                $imageUrl = $char?->icon_url;
+            } elseif ($request->has('target_weapon_id') && !empty($request->target_weapon_id)) {
+                $weap = Weapon::find($request->target_weapon_id);
+                $imageUrl = $weap?->icon_url;
+            }
+        }
+
+        $task = task::create([
             'nama_task' => $request->nameTask,
-            'images' => $request->urlImage,
-            'jenis' => $request->jenis_task,
-            'status' => 'start', //complete,finish
-            'prioritas' => $request->prioritas
-        );
+            'images'    => $imageUrl,
+            'jenis'     => $request->jenis_task ?: 'stat',
+            'status'    => 'start',
+            'prioritas' => (int) $request->prioritas,
+        ]);
 
-        $task = task::create($data);
-        if($task){
-            foreach ($request->namaMaterial as $key => $value) {
-                $dibutuhkan = $request->amount[$key];
-                $material = array(
-                    'material_id' => $value,
-                    'task_id' => $task->id,
-                    'amount' => $dibutuhkan
-                );
-
-                subTask::create($material);
+        if ($task && $request->has('namaMaterial') && is_array($request->namaMaterial)) {
+            foreach ($request->namaMaterial as $key => $materialId) {
+                if (empty($materialId)) continue;
+                $dibutuhkan = max(1, (int) ($request->amount[$key] ?? 1));
+                subTask::create([
+                    'task_id'     => $task->id,
+                    'material_id' => $materialId,
+                    'amount'      => $dibutuhkan,
+                ]);
             }
         }
         
-        return redirect()->route('task.index');
+        return redirect()->route('task.index')->with('success', 'Task "' . $task->nama_task . '" berhasil ditambahkan!');
     }
 
     /**
@@ -107,7 +127,7 @@ class taskController extends Controller
      */
     public function show(task $task): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -115,7 +135,7 @@ class taskController extends Controller
      */
     public function edit(task $task): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -123,11 +143,16 @@ class taskController extends Controller
      */
     public function update(Request $request, task $task): RedirectResponse
     {
+        $request->validate([
+            'nameTaskEdit' => 'required|string|max:255',
+            'prioritasEdit' => 'required|integer|min:1',
+        ]);
+
         $task->update([
             'nama_task' => $request->nameTaskEdit,
-            'jenis' => $request->jenis_taskEdit,
-            'prioritas' => $request->prioritasEdit,
-            'images' => $request->urlImageEdit ?: $task->images,
+            'jenis'     => $request->jenis_taskEdit ?: $task->jenis,
+            'prioritas' => (int) $request->prioritasEdit,
+            'images'    => $request->urlImageEdit ?: $task->images,
         ]);
 
         if ($request->has('namaMaterial') && is_array($request->namaMaterial)) {
@@ -135,16 +160,16 @@ class taskController extends Controller
 
             foreach ($request->namaMaterial as $key => $materialId) {
                 if (empty($materialId)) continue;
-                $amount = (int) ($request->amount[$key] ?? 0);
+                $amount = max(1, (int) ($request->amount[$key] ?? 1));
                 subTask::create([
-                    'task_id' => $task->id,
+                    'task_id'     => $task->id,
                     'material_id' => $materialId,
-                    'amount' => $amount
+                    'amount'      => $amount,
                 ]);
             }
         }
 
-        return redirect()->route('task.index');
+        return redirect()->route('task.index')->with('success', 'Perubahan task berhasil disimpan!');
     }
 
     /**
@@ -153,30 +178,32 @@ class taskController extends Controller
     public function destroy(task $task): RedirectResponse
     {
         subTask::where('task_id', $task->id)->delete();
-
         $task->delete();
         
-        return redirect()->route('task.index');
+        return redirect()->route('task.index')->with('success', 'Task berhasil dihapus.');
     }
 
     public function craftingBuild(Request $request)
     {
         $idMaterial = $request->formidmaterial;
-        $crafting = $request->formRangeCraft;
+        $crafting = (int) $request->formRangeCraft;
 
         $getMaterial = material::find($idMaterial);
+        if ($getMaterial && $crafting > 0) {
+            $getMaterial->amount = max(0, $getMaterial->amount - ($crafting * 3));
+            $getMaterial->save();
 
-        $getMaterial->amount = $getMaterial->amount - ($crafting * 3);
-        $getMaterial->save();
-
-        $getCraftMaterial = material::where('familie_id', $getMaterial->familie_id)
-                            ->where('rarity', ($getMaterial->rarity + 1))
-                            ->first();
-        $getCraftMaterial->update([
-            'amount' => $getCraftMaterial->amount + $crafting
-        ]);
+            $getCraftMaterial = material::where('familie_id', $getMaterial->familie_id)
+                                ->where('rarity', ($getMaterial->rarity + 1))
+                                ->first();
+            if ($getCraftMaterial) {
+                $getCraftMaterial->update([
+                    'amount' => $getCraftMaterial->amount + $crafting
+                ]);
+            }
+        }
         
-        return redirect()->route('task.index');
+        return redirect()->route('task.index')->with('success', 'Crafting material berhasil!');
     }
 
     public function editMaterial(Request $request)
@@ -205,17 +232,43 @@ class taskController extends Controller
     public function upgradeTaskComplete($id)
     {
         $getTask = task::with('sub_task')->find($id);
-        foreach ($getTask->sub_task as $key => $subtask) {
-            $updateMaterial = material::find($subtask->material_id);
-
-            $updateMaterial->update([
-                'amount' => $updateMaterial->amount - $subtask->amount
-            ]);
+        if ($getTask) {
+            foreach ($getTask->sub_task as $subtask) {
+                $updateMaterial = material::find($subtask->material_id);
+                if ($updateMaterial) {
+                    $newAmount = max(0, $updateMaterial->amount - $subtask->amount);
+                    $updateMaterial->update(['amount' => $newAmount]);
+                }
+            }
+            $getTask->update(['status' => 'complete']);
+            return redirect()->route('task.index')->with('success', "Task \"{$getTask->nama_task}\" berhasil di-upgrade!");
         }
-        $getTask->update([
-            'status' => 'complete'
-        ]);
 
         return redirect()->route('task.index');
+    }
+
+    public function getCharacterTalentMaterials(Request $request, $characterId)
+    {
+        $currentLevel = (int) $request->input('current_level', 1);
+        $targetLevel  = (int) $request->input('target_level', 8);
+        $talentCount  = (int) $request->input('talent_count', 1);
+
+        $result = \App\Services\TalentMaterialService::calculateRequirements(
+            (int) $characterId,
+            $currentLevel,
+            $targetLevel,
+            $talentCount
+        );
+
+        return response()->json($result);
+    }
+
+    public function getTalentPresets($characterId)
+    {
+        $presets = \App\Services\TalentMaterialService::getPresetsForCharacter((int) $characterId);
+        return response()->json([
+            'success' => true,
+            'presets' => $presets
+        ]);
     }
 }

@@ -37,7 +37,7 @@
       
       {{-- 1. GENSHIN IMPACT (ACTIVE) --}}
       <div class="col-12 col-md-6 col-xl-3 animate-fade-in-up" style="animation-delay: 0.05s;">
-        <a href="{{ route('inventory.dashboard') }}" class="game-hub-card game-active" title="Masuk ke Dashboard Genshin Impact">
+        <a href="{{ route('select-game', 'genshin_impact') }}" class="game-hub-card game-active" title="Masuk ke Dashboard Genshin Impact">
           <div class="game-card-banner">
             <div class="game-card-banner-bg" style="background-image: radial-gradient(circle, #e5a029 0%, #0d0f1a 100%);"></div>
             <div class="game-card-icon-wrap" style="color: #ffd700; border-color: rgba(229, 160, 41, 0.4);">
@@ -185,98 +185,6 @@
         </div>
       </div>
 
-    </div>
-  </div>
-
-  {{-- SECTION 2: QUICK ACCESSS GENSHIN IMPACT FEATURES --}}
-  <div class="mt-5 pt-3 border-top border-secondary border-opacity-25">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div>
-        <h5 class="font-display text-gold mb-0">
-          <i class="bi bi-grid-3x3-gap-fill me-2"></i>Akses Cepat Modul Genshin Impact
-        </h5>
-        <span style="font-size: 0.8rem; color: var(--text-secondary);">
-          Langsung lompat ke inventori, kalkulator, atau master database game
-        </span>
-      </div>
-      <a href="{{ route('inventory.dashboard') }}" class="btn btn-outline-warning btn-sm">
-        <i class="bi bi-speedometer2 me-1"></i>Buka Dashboard Utama
-      </a>
-    </div>
-
-    <div class="row g-3">
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.05s;">
-        <a href="{{ route('inventory.characters.index') }}" class="home-nav-card">
-          <i class="bi bi-person-badge-fill nav-icon text-gold"></i>
-          <span class="nav-label">Inventori Karakter</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.08s;">
-        <a href="{{ route('inventory.weapons.index') }}" class="home-nav-card">
-          <i class="bi bi-shield-fill-check nav-icon text-gold"></i>
-          <span class="nav-label">Inventori Senjata</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.11s;">
-        <a href="{{ route('inventory.artifacts.index') }}" class="home-nav-card">
-          <i class="bi bi-flower1 nav-icon text-gold"></i>
-          <span class="nav-label">Inventori Artifact</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.14s;">
-        <a href="{{ route('artifact-scoring.index') }}" class="home-nav-card">
-          <i class="bi bi-trophy-fill nav-icon text-gold"></i>
-          <span class="nav-label">Artifact Scoring</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.17s;">
-        <a href="{{ route('inventory.materials.index') }}" class="home-nav-card">
-          <i class="bi bi-backpack-fill nav-icon text-gold"></i>
-          <span class="nav-label">Inventori Material</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.20s;">
-        <a href="{{ route('calculator.index') }}" class="home-nav-card">
-          <i class="bi bi-calculator-fill nav-icon text-gold"></i>
-          <span class="nav-label">Kalkulator Upgrade</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.23s;">
-        <a href="{{ route('character.index') }}" class="home-nav-card">
-          <i class="bi bi-people-fill nav-icon"></i>
-          <span class="nav-label">Master Karakter</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.26s;">
-        <a href="{{ route('weapon.index') }}" class="home-nav-card">
-          <i class="bi bi-shield-shaded nav-icon"></i>
-          <span class="nav-label">Master Senjata</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.29s;">
-        <a href="{{ route('artifact.index') }}" class="home-nav-card">
-          <i class="bi bi-flower2 nav-icon"></i>
-          <span class="nav-label">Master Artifact</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.32s;">
-        <a href="{{ route('material.index') }}" class="home-nav-card">
-          <i class="bi bi-gem nav-icon"></i>
-          <span class="nav-label">Master Material</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.35s;">
-        <a href="{{ route('task.index') }}" class="home-nav-card">
-          <i class="bi bi-list-task nav-icon"></i>
-          <span class="nav-label">Task Tracker</span>
-        </a>
-      </div>
-      <div class="col-6 col-sm-4 col-md-3 col-xl-2 animate-fade-in-up" style="animation-delay: 0.38s;">
-        <a href="{{ route('game-accounts.index') }}" class="home-nav-card">
-          <i class="bi bi-controller nav-icon"></i>
-          <span class="nav-label">Akun Game</span>
-        </a>
-      </div>
     </div>
   </div>
 

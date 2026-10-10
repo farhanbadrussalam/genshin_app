@@ -10,6 +10,7 @@ use App\Models\InventoryMaterial;
 use App\Models\task;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class InventoryDashboardController extends Controller
 {
@@ -160,7 +161,106 @@ class InventoryDashboardController extends Controller
             ->sortByDesc('level')
             ->take(8);
 
+        // ── 7. MATERIAL FARMING BUKA HARI INI (HANYA YANG ADA JADWAL TASK) ──
+        $today = Carbon::now(config('app.timezone'))->locale('id');
+        $indonesianDays = [1 => 'senin', 2 => 'selasa', 3 => 'rabu', 4 => 'kamis', 5 => 'jumat', 6 => 'sabtu', 7 => 'minggu'];
+        $todayLabelId = strtolower($indonesianDays[$today->dayOfWeekIso]);
+        $todayLabelEn = strtolower($today->englishDayOfWeek);
+        $isSunday = ($today->dayOfWeekIso === 7);
+
+        // Ambil task aktif
+        $activeTasks = task::with(['sub_task.material'])
+            ->where('status', '!=', 'complete')
+            ->get();
+
+        $taskNeededByMaterial = [];
+        foreach ($activeTasks as $t) {
+            foreach ($t->sub_task as $st) {
+                if (!$st->material) continue;
+                $matId = $st->material->id;
+                $taskNeededByMaterial[$matId] ??= [
+                    'tasks' => [],
+                    'required' => 0,
+                ];
+                $taskNeededByMaterial[$matId]['tasks'][] = html_entity_decode($t->nama_task, ENT_QUOTES, 'UTF-8');
+                $taskNeededByMaterial[$matId]['required'] += (int) $st->amount;
+            }
+        }
+
+        // Ambil stok material dari inventori activeAccount
+        $inventoryByMaterial = InventoryMaterial::where('game_account_id', $accId)->pluck('amount', 'material_id');
+
+        // Ambil material yang memiliki dropdomain (memiliki jadwal rotasi domain)
+        $scheduledMaterials = \App\Models\material::whereNotNull('dropdomain')
+            ->where('dropdomain', '!=', '')
+            ->get();
+
+        // Filter material terjadwal yang BUKA HARI INI
+        $todayMaterials = $scheduledMaterials->filter(function ($mat) use ($isSunday, $todayLabelId, $todayLabelEn) {
+            if ($isSunday) return true;
+            $days = is_string($mat->daysofweek) ? json_decode($mat->daysofweek, true) : $mat->daysofweek;
+            if (!is_array($days)) return false;
+            foreach ($days as $d) {
+                $dl = strtolower(trim($d));
+                if (str_contains($dl, $todayLabelId) || str_contains($dl, $todayLabelEn)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        // Filter: HANYA tampilkan material & domain yang ADA DI TASK AKTIF user dan BUKA HARI INI
+        // Sisanya (yang tidak ada jadwal atau bukan bagian task) tidak ditampilkan
+        $todayDomains = $todayMaterials->groupBy('dropdomain')->map(function ($items, $domainName) use ($taskNeededByMaterial, $inventoryByMaterial) {
+            $isMastery = str_contains($domainName, 'Mastery');
+            $type = $isMastery ? 'talent' : 'weapon';
+            $typeName = $isMastery ? 'Buku Talenta' : 'Material Senjata';
+
+            // Filter HANYA material yang dibutuhkan oleh task aktif
+            $materialsList = $items->filter(function ($mat) use ($taskNeededByMaterial) {
+                return isset($taskNeededByMaterial[$mat->id]);
+            })->map(function ($mat) use ($taskNeededByMaterial, $inventoryByMaterial) {
+                $owned = $inventoryByMaterial->has($mat->id)
+                    ? (int) $inventoryByMaterial->get($mat->id)
+                    : (int) $mat->amount;
+                $neededInfo = $taskNeededByMaterial[$mat->id];
+                $required = (int) $neededInfo['required'];
+                $missing = max(0, $required - $owned);
+                $tasks = array_values(array_unique($neededInfo['tasks']));
+
+                return [
+                    'material' => $mat,
+                    'owned' => $owned,
+                    'required' => $required,
+                    'missing' => $missing,
+                    'is_needed_by_task' => true,
+                    'tasks' => $tasks,
+                ];
+            })->sortByDesc('material.rarity')->values();
+
+            return [
+                'domain' => $domainName,
+                'type' => $type,
+                'type_name' => $typeName,
+                'materials' => $materialsList,
+                'has_needed_tasks' => $materialsList->isNotEmpty(),
+            ];
+        })->filter(function ($dom) {
+            // Hanya domain yang dibutuhkan task aktif yang memiliki jadwal buka hari ini
+            return $dom['has_needed_tasks'];
+        })->values();
+
+        $todayDomainsCount = $todayDomains->count();
+        $todayTaskDomainsCount = $todayDomainsCount;
+        $todayDateFormatted = $today->translatedFormat('l, d F Y');
+        $todayDayName = $today->translatedFormat('l');
+
         return view('inventory.dashboard', [
+            'todayDomains'          => $todayDomains,
+            'todayDomainsCount'     => $todayDomainsCount,
+            'todayTaskDomainsCount' => $todayTaskDomainsCount,
+            'todayDateFormatted'    => $todayDateFormatted,
+            'todayDayName'          => $todayDayName,
             'accounts'              => $accounts,
             'activeAccount'         => $activeAccount,
             'stats'                 => [

@@ -22,12 +22,28 @@ use App\Http\Controllers\GoodFormatController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('/', function(){
-    return view('welcome', ['title' => 'Menu']);
-});
+Route::get('/', function () {
+    return view('welcome', ['title' => 'Game Hub & Portal']);
+})->name('welcome');
+
+Route::get('select-game/{game}', function (\Illuminate\Http\Request $request, $game) {
+    if ($game === 'genshin_impact' || $game === 'genshin') {
+        session(['active_game' => 'genshin_impact']);
+        return redirect()->route('inventory.dashboard');
+    }
+    session(['active_game' => $game]);
+    return redirect()->route('welcome')->with('info', 'Game ini sedang dalam tahap perancangan.');
+})->name('select-game');
+
+Route::get('reset-game', function () {
+    session()->forget('active_game');
+    return redirect()->route('welcome');
+})->name('reset-game');
 
 Route::resource('family', familyController::class);
 Route::resource('material', materialController::class);
+Route::get('task/character-talent-materials/{characterId}', [taskController::class, 'getCharacterTalentMaterials'])->name('task.talent-materials');
+Route::get('task/talent-presets/{characterId}', [taskController::class, 'getTalentPresets'])->name('task.talent-presets');
 Route::resource('task', taskController::class);
 Route::post('character/sync-all', [CharacterController::class, 'syncAll'])->name('character.sync-all');
 Route::resource('character', CharacterController::class);
@@ -140,3 +156,10 @@ Route::prefix('daily-resin')->name('daily-resin.')->group(function () {
     Route::post('/alerts/{gameAccount}/mark-read', [\App\Http\Controllers\DailyResinController::class, 'markAlertsAsRead'])->name('alerts.mark-read');
     Route::post('/alerts/{gameAccount}/test', [\App\Http\Controllers\DailyResinController::class, 'testResinAlert'])->name('alerts.test');
 });
+
+// Planning
+Route::get('farming-planner', [\App\Http\Controllers\FarmingPlannerController::class, 'index'])
+    ->name('farming-planner.index');
+Route::get('build-planner', [\App\Http\Controllers\BuildPlannerController::class, 'index'])
+    ->name('build-planner.index');
+
