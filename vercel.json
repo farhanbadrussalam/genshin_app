@@ -8,6 +8,14 @@
   },
   "routes": [
     {
+      "src": "/css/(.*)",
+      "dest": "/public/css/$1"
+    },
+    {
+      "src": "/chosen/(.*)",
+      "dest": "/public/chosen/$1"
+    },
+    {
       "src": "/build/(.*)",
       "dest": "/public/build/$1"
     },
@@ -29,6 +37,10 @@
     },
     {
       "src": "/(favicon.ico|robots.txt)",
+      "dest": "/public/$1"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|ico|json|webp))",
       "dest": "/public/$1"
     },
     {
