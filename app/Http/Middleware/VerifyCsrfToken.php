@@ -23,6 +23,9 @@ class VerifyCsrfToken extends Middleware
         'weapon/sync-all',
         'artifact-scoring/*',
         'enemy/sync-all',
+        'material/sync-all',
+        'family/sync-all',
+        'task/toggle-subtask/*',
         'party/*',
     ];
 }

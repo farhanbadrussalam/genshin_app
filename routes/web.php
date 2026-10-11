@@ -40,10 +40,14 @@ Route::get('reset-game', function () {
     return redirect()->route('welcome');
 })->name('reset-game');
 
+Route::post('family/sync-all', [familyController::class, 'syncAll'])->name('family.sync-all');
 Route::resource('family', familyController::class);
+Route::post('material/sync-all', [materialController::class, 'syncAll'])->name('material.sync-all');
 Route::resource('material', materialController::class);
 Route::get('task/character-talent-materials/{characterId}', [taskController::class, 'getCharacterTalentMaterials'])->name('task.talent-materials');
 Route::get('task/talent-presets/{characterId}', [taskController::class, 'getTalentPresets'])->name('task.talent-presets');
+Route::get('task/toggle-status/{id}', [taskController::class, 'toggleStatus'])->name('task.toggle-status');
+Route::post('task/toggle-subtask/{id}', [taskController::class, 'toggleSubTask'])->name('task.toggle-subtask');
 Route::resource('task', taskController::class);
 Route::post('character/sync-all', [CharacterController::class, 'syncAll'])->name('character.sync-all');
 Route::resource('character', CharacterController::class);
@@ -65,6 +69,7 @@ Route::resource('game-accounts', GameAccountController::class)
 // ─── Inventory: Characters, Weapons & Artifacts ────────────────────────────────
 Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\InventoryDashboardController::class, 'index'])->name('dashboard');
+    Route::get('compare', [\App\Http\Controllers\AccountCompareController::class, 'index'])->name('compare');
     Route::post('sync-all', [\App\Http\Controllers\InventoryDashboardController::class, 'syncAll'])->name('sync-all');
 
     // ─── GOOD & Gemini Format: Export & Import ─────────────────

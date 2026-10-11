@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Family;
+use App\Models\family as Family;
 use App\Models\GameAccount;
 use App\Models\InventoryMaterial;
 use App\Models\material as Material;

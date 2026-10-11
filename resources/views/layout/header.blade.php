@@ -88,6 +88,11 @@
                 </a>
               </li>
               <li>
+                <a class="dropdown-item {{ request()->routeIs('inventory.compare') ? 'active' : '' }}" href="{{ route('inventory.compare') }}">
+                  <i class="bi bi-arrow-left-right me-2 text-warning"></i>Komparasi Build 2 Akun
+                </a>
+              </li>
+              <li>
                 <a class="dropdown-item {{ request()->routeIs('inventory.materials.*') ? 'active' : '' }}" href="{{ route('inventory.materials.index') }}">
                   <i class="bi bi-gem me-2 text-gold"></i>Inventori Material
                 </a>

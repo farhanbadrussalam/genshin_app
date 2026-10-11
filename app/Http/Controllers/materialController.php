@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\material;
 use App\Models\family;
+use App\Services\MaterialSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,9 +17,31 @@ class materialController extends Controller
     public function index(): Response
     {
         $data['dataFamily'] = family::with('material')->orderBy('name', 'ASC')->get();
-        $data['title'] = 'Material';
+        $data['title'] = 'Master Material';
 
         return Response(view('material.index', $data));
+    }
+
+    /**
+     * Sinkronisasi katalog data master material & family dari API eksternal
+     */
+    public function syncAll(Request $request, MaterialSyncService $syncService)
+    {
+        try {
+            $result = $syncService->syncAllMaterials();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json($result);
+            }
+
+            return redirect()->route('material.index')->with('success', $result['message']);
+        } catch (\Throwable $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal mensinkronkan material: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -26,7 +49,7 @@ class materialController extends Controller
      */
     public function create(): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -36,7 +59,7 @@ class materialController extends Controller
     {
         $material_ = json_decode($request->dataMaterial);
         $family_id = $request->family_id;
-        $amount = $request->amount;
+        $amount = (int) $request->amount;
 
         $imgUrl = '';
         if (isset($material_->images)) {
@@ -63,18 +86,17 @@ class materialController extends Controller
             'source' => isset($material_->source) ? json_encode($material_->source) : (isset($material_->sources) ? json_encode($material_->sources) : '[]'),
         );
 
-        // Cek data
         $cekdata = material::where('name', $material_->name)->first();
 
-        if(isset($cekdata)){
-            $updateMount = $cekdata->update([
+        if (isset($cekdata)) {
+            $cekdata->update([
                 'amount' => (int) $cekdata->amount + $amount
             ]);
-        }else{
-            $created = material::create($data);
+        } else {
+            material::create($data);
         }
 
-        return redirect()->route('material.index');
+        return redirect()->route('material.index')->with('success', 'Material berhasil ditambahkan!');
     }
 
     /**
@@ -82,7 +104,7 @@ class materialController extends Controller
      */
     public function show(material $material): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -90,7 +112,7 @@ class materialController extends Controller
      */
     public function edit(material $material): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -99,11 +121,11 @@ class materialController extends Controller
     public function update(Request $request, material $material): RedirectResponse
     {
         $material->update([
-            'amount' => $request->amount,
+            'amount' => (int) $request->amount,
             'familie_id' => $request->family_id
         ]);
 
-        return redirect()->route('material.index');
+        return redirect()->route('material.index')->with('success', 'Material berhasil diperbarui!');
     }
 
     /**
@@ -111,6 +133,7 @@ class materialController extends Controller
      */
     public function destroy(material $material): RedirectResponse
     {
-        //
+        $material->delete();
+        return redirect()->route('material.index')->with('success', 'Material berhasil dihapus!');
     }
 }

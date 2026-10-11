@@ -6,9 +6,40 @@
 
 <div class="page-container" style="padding-top: 1.25rem; padding-bottom: 5rem;">
 
-  <div class="page-header">
-    <i class="bi bi-collection-fill"></i> Family Material
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="page-header mb-0">
+      <i class="bi bi-collection-fill text-gold"></i> Family Material
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <form action="{{ route('family.sync-all') }}" method="POST" id="formSyncFamily" onsubmit="return confirmSyncFamily(this);">
+        @csrf
+        <button type="submit" class="btn btn-warning btn-sm fw-bold d-flex align-items-center gap-1 shadow-sm" id="btnSyncFamily"
+                style="background: linear-gradient(135deg, #c8aa6e, #dfc085); border: none; color: #111827;">
+          <i class="bi bi-arrow-repeat fs-6" id="iconSyncFamily"></i>
+          <span>Sync Family dari API</span>
+        </button>
+      </form>
+      <a href="{{ route('material.index') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 text-light" style="border-color: rgba(255, 255, 255, 0.2);">
+        <i class="bi bi-gem text-gold"></i>
+        <span>Katalog Material</span>
+      </a>
+    </div>
   </div>
+
+  <script>
+    function confirmSyncFamily(form) {
+      if (!confirm("Mulai sinkronisasi seluruh katalog family & material dari API Genshin-DB? Proses ini memerlukan beberapa detik.")) {
+        return false;
+      }
+      const btn = document.getElementById("btnSyncFamily");
+      const icon = document.getElementById("iconSyncFamily");
+      if (btn && icon) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Mensinkronkan data API...`;
+      }
+      return true;
+    }
+  </script>
 
   {{-- Search Bar --}}
   <div class="search-filter-box mb-3">

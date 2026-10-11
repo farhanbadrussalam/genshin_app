@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\task;
+use App\Models\GameAccount;
 use App\Services\HoyoLabMicroservice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -94,10 +95,14 @@ class HoyoLabController extends Controller
             foreach ($characters as $char) {
                 $taskName = "Upgrade: {$char['name']}";
 
-                // Cek apakah task untuk karakter ini sudah ada
-                $exists = task::where('nama_task', $taskName)
-                    ->where('jenis', 'stat')
-                    ->exists();
+                $gameAccount = GameAccount::where('uid', $validated['uid'])->first();
+
+                // Cek apakah task untuk karakter ini sudah ada pada akun terkait
+                $existsQuery = task::where('nama_task', $taskName)->where('jenis', 'stat');
+                if ($gameAccount) {
+                    $existsQuery->where('game_account_id', $gameAccount->id);
+                }
+                $exists = $existsQuery->exists();
 
                 if ($exists) {
                     $skippedTasks[] = $char['name'];
@@ -107,11 +112,12 @@ class HoyoLabController extends Controller
 
                 // Buat draft Task baru
                 $newTask = task::create([
-                    'nama_task' => $taskName,
-                    'images'    => $char['image'],
-                    'jenis'     => 'stat',              // Enum: stat | weapon | talent
-                    'status'    => 'start',              // Status awal: mulai direncanakan
-                    'prioritas' => $this->mapLevelToPriority($char['level']),
+                    'game_account_id' => $gameAccount?->id,
+                    'nama_task'       => $taskName,
+                    'images'          => $char['image'],
+                    'jenis'           => 'stat',              // Enum: stat | weapon | talent
+                    'status'          => 'start',              // Status awal: mulai direncanakan
+                    'prioritas'       => $this->mapLevelToPriority($char['level']),
                 ]);
 
                 $savedTasks[] = [

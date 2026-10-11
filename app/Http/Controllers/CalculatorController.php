@@ -260,7 +260,9 @@ class CalculatorController extends Controller
             'materials.*.amount'      => 'required|integer|min:1',
         ]);
 
+        $accountId = $request->input('account_id', session('active_game_account_id'));
         $task = Task::create([
+            'game_account_id' => $accountId,
             'nama_task' => $request->task_name,
             'images'    => $request->image_url ?: 'https://placehold.co/100x100/1e2337/gold?text=Task',
             'jenis'     => $request->jenis,
@@ -280,11 +282,11 @@ class CalculatorController extends Controller
             return response()->json([
                 'success'  => true,
                 'task_id'  => $task->id,
-                'redirect' => route('task.index'),
+                'redirect' => route('task.index', ['account_id' => $accountId]),
             ]);
         }
 
-        return redirect()->route('task.index')->with('success', "Task \"{$task->nama_task}\" berhasil dibuat dari Kalkulator!");
+        return redirect()->route('task.index', ['account_id' => $accountId])->with('success', "Task \"{$task->nama_task}\" berhasil dibuat dari Kalkulator!");
     }
 
     private function calcAscensionFromLevel(int $lvl): int

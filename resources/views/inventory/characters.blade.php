@@ -129,6 +129,9 @@
         <button class="btn-genshin btn-genshin-sm" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2)); border-color: rgba(96, 165, 250, 0.5); color: #f3f4f6;" data-bs-toggle="modal" data-bs-target="#modalSyncHoyoLab">
           <i class="bi bi-arrow-repeat me-1"></i>Sync HoYoLAB
         </button>
+        <a href="{{ route('inventory.compare', ['account1_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm" style="background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fef08a;">
+          <i class="bi bi-arrow-left-right me-1"></i>Bandingkan 2 Akun
+        </a>
         <a href="{{ route('inventory.good.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm" style="background: rgba(228, 196, 133, 0.15); border-color: rgba(228, 196, 133, 0.5); color: var(--genshin-gold);">
           <i class="bi bi-arrow-left-right me-1"></i>GOOD (Export/Import)
         </a>
@@ -534,6 +537,12 @@
                         data-gear="{{ json_encode($gearData) }}">
                   <i class="bi bi-shield-check me-1"></i>Gear
                 </button>
+                <a href="{{ route('inventory.compare', ['account1_id' => $activeAccount->id, 'character_id' => $inv->character_id]) }}"
+                   class="btn-action view-gear" 
+                   style="background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fef08a; text-decoration: none; display: inline-flex; align-items: center;"
+                   title="Bandingkan karakter ini dengan akun lain">
+                  <i class="bi bi-arrow-left-right"></i>
+                </a>
                 <button class="btn-action edit"
                         title="Edit Build Karakter"
                         data-bs-toggle="modal"

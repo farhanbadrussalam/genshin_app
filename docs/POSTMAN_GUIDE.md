@@ -64,6 +64,12 @@ Sinkronisasi katalog referensi game:
 - **`POST /character/sync-all?source=amber`** : Sinkronisasi data master karakter dari **Project Amber (`gi.yatta.moe`)** ke database lokal (katalog terlengkap dengan Region/Bangsa dan icon HD).
 - **`POST /character/sync-all?source=enka`** : Sinkronisasi data master karakter dari repositori **Enka.Network**.
 - **`POST /weapon/sync-all`** : Sinkronisasi seluruh data master senjata dari database Enka ke database lokal.
+- **`POST /material/sync-all`** : Sinkronisasi seluruh data master material dan pengelompokan family dari database **Genshin-DB API** ke database lokal.
+- **`POST /family/sync-all`** : Sinkronisasi kelompok family material & material terkait dari API ke database lokal.
+
+### 6. Laravel - Account Comparison & Task Management
+- **`GET /inventory/compare?account1_id=1&account2_id=2&character_id=1`** : Membandingkan 1 karakter antara 2 akun game dalam 1 card komprehensif (status, konstelasi, talent, senjata, set bonus, dan detail ke-5 slot artefak & sub-stats).
+- **`GET /task?account_id=1`** : Task tracker terisolasi yang terhubung dengan akun game yang sedang dipilih beserta kalkulasi stok inventori material real-time.
 
 ---
 

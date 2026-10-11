@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\family;
+use App\Services\MaterialSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,9 +15,31 @@ class familyController extends Controller
      */
     public function index(): Response
     {
-        $data['dataFamily'] = family::all();
+        $data['dataFamily'] = family::withCount('material')->orderBy('name', 'ASC')->get();
         $data['title'] = 'Family Material';
         return Response(view('family.index', $data));
+    }
+
+    /**
+     * Sinkronisasi data master family & material dari API eksternal
+     */
+    public function syncAll(Request $request, MaterialSyncService $syncService)
+    {
+        try {
+            $result = $syncService->syncAllMaterials();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json($result);
+            }
+
+            return redirect()->route('family.index')->with('success', $result['message']);
+        } catch (\Throwable $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal mensinkronkan family material: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -24,7 +47,7 @@ class familyController extends Controller
      */
     public function create(): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -32,17 +55,15 @@ class familyController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validation = $request->validate([
-            'nameFamily' => 'required'
+        $request->validate([
+            'nameFamily' => 'required|string|max:255'
         ]);
 
-        $data = array(
+        family::create([
             'name' => $request->nameFamily
-        );
+        ]);
 
-        family::create($data);
-
-        return redirect()->route('family.index');
+        return redirect()->route('family.index')->with('success', 'Family berhasil ditambahkan!');
     }
 
     /**
@@ -50,7 +71,7 @@ class familyController extends Controller
      */
     public function show(family $family): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -58,7 +79,7 @@ class familyController extends Controller
      */
     public function edit(family $family): Response
     {
-        //
+        return $this->index();
     }
 
     /**
@@ -66,11 +87,15 @@ class familyController extends Controller
      */
     public function update(Request $request, family $family): RedirectResponse
     {
+        $request->validate([
+            'nameFamily' => 'required|string|max:255'
+        ]);
+
         $family->update([
             'name' => $request->nameFamily
         ]);
 
-        return redirect()->route('family.index');
+        return redirect()->route('family.index')->with('success', 'Family berhasil diperbarui!');
     }
 
     /**
@@ -79,7 +104,6 @@ class familyController extends Controller
     public function destroy(family $family): RedirectResponse
     {
         $family->delete();
-
-        return redirect()->route('family.index');
+        return redirect()->route('family.index')->with('success', 'Family berhasil dihapus!');
     }
 }

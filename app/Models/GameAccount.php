@@ -99,6 +99,14 @@ class GameAccount extends Model
     }
 
     /**
+     * Target task yang dimiliki akun game ini
+     */
+    public function tasks()
+    {
+        return $this->hasMany(task::class, 'game_account_id');
+    }
+
+    /**
      * Karakter yang dimiliki akun game ini
      */
     public function inventoryCharacters()

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\hasOne;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class subTask extends Model
 {
@@ -13,10 +13,16 @@ class subTask extends Model
     protected $fillable = [
         'task_id',
         'material_id',
-        'amount'
+        'amount',
+        'is_completed',
     ];
 
-    public function material(): hasOne
+    protected $casts = [
+        'is_completed' => 'boolean',
+        'amount'       => 'integer',
+    ];
+
+    public function material(): HasOne
     {
         return $this->hasOne(material::class, 'id', 'material_id');
     }
