@@ -254,7 +254,7 @@
             </div>
             <div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="text-white fw-bold fs-6">{{ $activeAccount?->nickname ?? 'Semua Akun' }}</span>
+                    <span class="text-white fw-bold fs-6">{{ $activeAccount?->nickname ?? 'Belum Ada Akun Game' }}</span>
                     @if($activeAccount)
                         <span class="badge border border-info border-opacity-25 bg-info bg-opacity-10 text-info font-monospace small" style="font-size: 0.72rem;">
                             UID: {{ $activeAccount->uid }}
@@ -265,23 +265,33 @@
                     @endif
                 </div>
                 <div class="small text-secondary" style="font-size: 0.8rem; color: #94a3b8 !important;">
-                    Menampilkan task checklist khusus untuk akun ini.
+                    @if($activeAccount)
+                        Menampilkan task checklist khusus untuk akun ini.
+                    @else
+                        Belum ada akun game yang terdaftar. <a href="{{ route('game-accounts.index') }}" class="text-gold text-decoration-underline ms-1">Tambah akun game sekarang</a>
+                    @endif
                 </div>
             </div>
         </div>
         
         {{-- Akun Switcher Pills --}}
         <div class="d-flex align-items-center gap-2 ms-auto">
-            <span class="small text-gold fw-semibold d-none d-md-inline" style="font-size: 0.8rem;">Ganti Akun:</span>
-            <div class="btn-group" role="group">
-                @foreach($accounts as $acc)
-                    <a href="{{ route('task.index', ['account_id' => $acc->id, 'status' => $currentStatus]) }}" 
-                       class="btn btn-sm {{ ($activeAccount && $activeAccount->id == $acc->id) ? 'btn-warning fw-bold text-dark shadow-sm' : 'btn-outline-secondary text-light' }}"
-                       style="border-radius: 8px; margin-right: 4px; font-size: 0.8rem; {{ ($activeAccount && $activeAccount->id == $acc->id) ? 'background: linear-gradient(135deg, #c8aa6e, #dfc085); border-color: #dfc085;' : 'border-color: rgba(255, 255, 255, 0.15);' }}">
-                        <i class="bi bi-person-fill me-1"></i>{{ $acc->nickname }}
-                    </a>
-                @endforeach
-            </div>
+            @if($accounts->isNotEmpty())
+                <span class="small text-gold fw-semibold d-none d-md-inline" style="font-size: 0.8rem;">Ganti Akun:</span>
+                <div class="btn-group" role="group">
+                    @foreach($accounts as $acc)
+                        <a href="{{ route('task.index', ['account_id' => $acc->id, 'status' => $currentStatus]) }}" 
+                           class="btn btn-sm {{ ($activeAccount && $activeAccount->id == $acc->id) ? 'btn-warning fw-bold text-dark shadow-sm' : 'btn-outline-secondary text-light' }}"
+                           style="border-radius: 8px; margin-right: 4px; font-size: 0.8rem; {{ ($activeAccount && $activeAccount->id == $acc->id) ? 'background: linear-gradient(135deg, #c8aa6e, #dfc085); border-color: #dfc085;' : 'border-color: rgba(255, 255, 255, 0.15);' }}">
+                            <i class="bi bi-person-fill me-1"></i>{{ $acc->nickname }}
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <a href="{{ route('game-accounts.index') }}" class="btn btn-warning btn-sm fw-bold">
+                    <i class="bi bi-plus-lg me-1"></i>Tambah Akun Game
+                </a>
+            @endif
         </div>
     </div>
 
@@ -550,14 +560,28 @@
             <div class="text-center py-5 my-4 rounded-3" style="background: rgba(19, 23, 42, 0.6); border: 1px dashed rgba(200, 170, 110, 0.3);">
                 <i class="bi bi-check2-all text-gold opacity-50 d-block mb-3" style="font-size: 3rem;"></i>
                 <h4 class="h5 text-white fw-bold mb-1">
-                    {{ $currentStatus === 'complete' ? 'Belum Ada Task yang Selesai' : 'Tidak Ada Task yang Sedang Dikerjakan' }}
+                    @if($accounts->isEmpty())
+                        Belum Ada Akun Game Terdaftar
+                    @else
+                        {{ $currentStatus === 'complete' ? 'Belum Ada Task yang Selesai' : 'Tidak Ada Task yang Sedang Dikerjakan' }}
+                    @endif
                 </h4>
                 <p class="text-secondary small mb-3">
-                    {{ $currentStatus === 'complete' ? 'Tandai task sebagai selesai jika Anda sudah menyelesaikan upgrade.' : 'Tambahkan target upgrade baru atau buat rencana dari Kalkulator!' }}
+                    @if($accounts->isEmpty())
+                        Anda belum memiliki akun game. Silakan tambahkan akun game terlebih dahulu untuk mulai membuat target upgrade!
+                    @else
+                        {{ $currentStatus === 'complete' ? 'Tandai task sebagai selesai jika Anda sudah menyelesaikan upgrade.' : 'Tambahkan target upgrade baru atau buat rencana dari Kalkulator!' }}
+                    @endif
                 </p>
-                <button type="button" class="btn btn-warning btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#tambahTask">
-                    <i class="bi bi-plus-lg me-1"></i>Tambah Task Sekarang
-                </button>
+                @if($accounts->isEmpty())
+                    <a href="{{ route('game-accounts.index') }}" class="btn btn-warning btn-sm fw-bold">
+                        <i class="bi bi-plus-lg me-1"></i>Tambah Akun Game Sekarang
+                    </a>
+                @else
+                    <button type="button" class="btn btn-warning btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#tambahTask">
+                        <i class="bi bi-plus-lg me-1"></i>Tambah Task Sekarang
+                    </button>
+                @endif
             </div>
         @endforelse
     </div>
@@ -575,17 +599,26 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-3 p-md-4">
+                    @if($accounts->isEmpty())
+                        <div class="alert alert-warning border-0 small mb-3" style="background: rgba(245, 158, 11, 0.15); color: #fef08a;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Anda belum memiliki akun game. Silakan <a href="{{ route('game-accounts.index') }}" class="fw-bold text-gold text-decoration-underline">tambahkan akun game</a> terlebih dahulu sebelum membuat task upgrade.
+                        </div>
+                    @endif
+
                     {{-- 0. Akun Game Target --}}
                     <div class="mb-3">
                         <label class="form-label text-gold small fw-bold mb-1">
                             <i class="bi bi-controller me-1"></i>Akun Game Target
                         </label>
-                        <select class="form-select form-select-sm genshin-select" id="game_account_id" name="game_account_id">
-                            @foreach($accounts as $acc)
+                        <select class="form-select form-select-sm genshin-select" id="game_account_id" name="game_account_id" {{ $accounts->isEmpty() ? 'disabled' : '' }}>
+                            @forelse($accounts as $acc)
                                 <option value="{{ $acc->id }}" {{ (isset($activeAccount) && $activeAccount->id == $acc->id) ? 'selected' : '' }}>
                                     {{ $acc->nickname }} (UID: {{ $acc->uid }} &bull; Server: {{ strtoupper($acc->server) }})
                                 </option>
-                            @endforeach
+                            @empty
+                                <option value="">-- Belum Ada Akun Game --</option>
+                            @endforelse
                         </select>
                     </div>
 

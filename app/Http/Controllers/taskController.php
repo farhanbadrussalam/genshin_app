@@ -34,6 +34,8 @@ class taskController extends Controller
 
         if ($activeAccount) {
             session(['active_game_account_id' => $activeAccount->id]);
+        } else {
+            session()->forget('active_game_account_id');
         }
 
         $currentStatus = $request->input('status', 'start'); // 'start' (aktif) atau 'complete' (selesai) atau 'all'
@@ -52,6 +54,9 @@ class taskController extends Controller
         $baseQuery = task::with('sub_task.material');
         if ($activeAccount) {
             $baseQuery->where('game_account_id', $activeAccount->id);
+        } else {
+            // Jika user belum memiliki akun game, jangan tampilkan task apapun
+            $baseQuery->whereRaw('1 = 0');
         }
 
         // Statistik task
@@ -203,6 +208,11 @@ class taskController extends Controller
         if (!$accountId) {
             $firstAcc = GameAccount::where('game', 'genshin_impact')->first();
             $accountId = $firstAcc?->id;
+        }
+
+        if (!$accountId) {
+            return redirect()->route('game-accounts.index')
+                ->with('warning', 'Silakan tambahkan akun game terlebih dahulu sebelum membuat task upgrade.');
         }
 
         $imageUrl = $request->urlImage;

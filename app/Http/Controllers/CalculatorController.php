@@ -261,6 +261,22 @@ class CalculatorController extends Controller
         ]);
 
         $accountId = $request->input('account_id', session('active_game_account_id'));
+        if (!$accountId) {
+            $firstAcc = \App\Models\GameAccount::where('game', 'genshin_impact')->first();
+            $accountId = $firstAcc?->id;
+        }
+
+        if (!$accountId) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan tambahkan akun game terlebih dahulu sebelum membuat task.',
+                ], 422);
+            }
+            return redirect()->route('game-accounts.index')
+                ->with('warning', 'Silakan tambahkan akun game terlebih dahulu sebelum membuat task.');
+        }
+
         $task = Task::create([
             'game_account_id' => $accountId,
             'nama_task' => $request->task_name,
