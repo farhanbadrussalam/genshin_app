@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class GameAccount extends Model
 {
@@ -32,6 +35,14 @@ class GameAccount extends Model
         'last_resin_alert_at',
     ];
 
+    /**
+     * Sembunyikan cookie sensitif dari array/json serialization
+     */
+    protected $hidden = [
+        'ltuid_v2',
+        'ltoken_v2',
+    ];
+
     protected $casts = [
         'last_synced_at'       => 'datetime',
         'auto_checkin_enabled' => 'boolean',
@@ -40,6 +51,89 @@ class GameAccount extends Model
         'last_resin_synced_at' => 'datetime',
         'last_resin_alert_at'  => 'datetime',
     ];
+
+    /**
+     * The "booted" method of the model.
+     * Terapkan Multi-Tenancy Data Ownership Scoping & auto-assign user_id
+     */
+    protected static function booted(): void
+    {
+        // Global scope: jika request sedang diautentikasi oleh user, batasi hanya akun milik user tsb
+        static::addGlobalScope('user_ownership', function (Builder $builder) {
+            if (auth()->check()) {
+                $builder->where('user_id', auth()->id());
+            }
+        });
+
+        // Event creating: otomatis isi user_id dari user yang sedang login jika belum diset
+        static::creating(function ($account) {
+            if (auth()->check() && empty($account->user_id)) {
+                $account->user_id = auth()->id();
+            }
+        });
+    }
+
+    /**
+     * Mutator & Accessor untuk ltuid_v2 (Terenkripsi di database)
+     */
+    public function setLtuidV2Attribute($value): void
+    {
+        if (empty($value)) {
+            $this->attributes['ltuid_v2'] = null;
+            return;
+        }
+
+        try {
+            Crypt::decryptString($value);
+            $this->attributes['ltuid_v2'] = $value;
+        } catch (\Throwable $e) {
+            $this->attributes['ltuid_v2'] = Crypt::encryptString(trim((string)$value));
+        }
+    }
+
+    public function getLtuidV2Attribute($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable $e) {
+            return (string)$value;
+        }
+    }
+
+    /**
+     * Mutator & Accessor untuk ltoken_v2 (Terenkripsi di database)
+     */
+    public function setLtokenV2Attribute($value): void
+    {
+        if (empty($value)) {
+            $this->attributes['ltoken_v2'] = null;
+            return;
+        }
+
+        try {
+            Crypt::decryptString($value);
+            $this->attributes['ltoken_v2'] = $value;
+        } catch (\Throwable $e) {
+            $this->attributes['ltoken_v2'] = Crypt::encryptString(trim((string)$value));
+        }
+    }
+
+    public function getLtokenV2Attribute($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (\Throwable $e) {
+            return (string)$value;
+        }
+    }
 
     /**
      * Daftar game yang didukung
@@ -91,7 +185,7 @@ class GameAccount extends Model
     }
 
     /**
-     * Relasi ke User (jika auth sudah diaktifkan)
+     * Relasi ke User
      */
     public function user()
     {

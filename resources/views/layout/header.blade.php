@@ -219,6 +219,51 @@
           </li>
         @endif
 
+        {{-- User Authentication Profile / Login Menu --}}
+        @if(auth()->check())
+          <li class="nav-item dropdown ms-lg-2">
+            <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-1.5" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                    style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(229, 160, 41, 0.45); color: #f8fafc; border-radius: 20px; font-size: 0.78rem; padding: 0.28rem 0.75rem;">
+              <i class="bi bi-person-circle text-gold"></i>
+              <span class="fw-semibold text-truncate" style="max-width: 110px;">{{ auth()->user()->name }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary shadow-lg py-2" style="min-width: 200px;">
+              <li class="px-3 py-1 mb-1 border-bottom border-secondary border-opacity-25">
+                <div class="fw-bold text-gold small text-truncate">{{ auth()->user()->name }}</div>
+                <div class="text-muted" style="font-size: 0.72rem;">{{ auth()->user()->email }}</div>
+              </li>
+              <li>
+                <a class="dropdown-item small" href="{{ route('game-accounts.index') }}">
+                  <i class="bi bi-controller me-2 text-gold"></i>Kelola Akun Game
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item small" href="{{ route('inventory.dashboard') }}">
+                  <i class="bi bi-speedometer2 me-2 text-gold"></i>Dashboard
+                </a>
+              </li>
+              <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+              <li>
+                <form method="POST" action="{{ route('logout') }}" id="logoutNavForm" class="m-0">
+                  @csrf
+                  <button type="submit" class="dropdown-item small text-danger d-flex align-items-center">
+                    <i class="bi bi-box-arrow-right me-2"></i>Keluar (Logout)
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        @else
+          <li class="nav-item ms-lg-2 d-flex align-items-center gap-1">
+            <a href="{{ route('login') }}" class="btn btn-sm btn-outline-warning text-gold py-1 px-2.5 rounded-pill" style="font-size: 0.75rem; border-color: rgba(229,160,41,0.5);">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Masuk
+            </a>
+            <a href="{{ route('register') }}" class="btn btn-sm btn-genshin py-1 px-2.5 rounded-pill text-dark fw-bold" style="font-size: 0.75rem;">
+              Daftar
+            </a>
+          </li>
+        @endif
+
       </ul>
     </div>
 

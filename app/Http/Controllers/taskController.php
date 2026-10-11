@@ -81,6 +81,7 @@ class taskController extends Controller
             // Cek jadwal farming hari ini
             $hasFarmingToday = false;
             foreach ($t->sub_task as $st) {
+                if ($st->is_completed) continue;
                 $m = $st->material;
                 if ($m) {
                     $days = json_decode($m->daysofweek ?? '[]', true) ?: [];

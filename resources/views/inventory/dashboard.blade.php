@@ -371,14 +371,17 @@
             <span class="badge px-2.5 py-1" style="background: rgba(200, 170, 110, 0.16); color: #f6e6ba; border: 1px solid rgba(200, 170, 110, 0.45); font-weight: 600; font-size: 0.75rem;">
               <i class="bi bi-calendar-event me-1"></i>{{ $todayDateFormatted }}
             </span>
+            <span class="badge bg-dark text-info border border-info border-opacity-25 px-2 py-1" style="font-size: 0.75rem;">
+              <i class="bi bi-person-fill me-1"></i>{{ $activeAccount->nickname }}
+            </span>
             @if($todayDomainsCount > 0)
               <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.72rem;">
-                <i class="bi bi-lightning-fill me-0.5"></i>{{ $todayDomainsCount }} Material Terjadwal Buka Hari Ini
+                <i class="bi bi-lightning-fill me-0.5"></i>{{ $todayDomainsCount }} Domain Terjadwal
               </span>
             @endif
           </div>
           <span style="font-size: 0.78rem; color: var(--text-secondary);">
-            Material dari task aktif kamu yang memiliki jadwal domain dan buka hari ini ({{ $todayDayName }}).
+            Material dari task aktif akun <strong>{{ $activeAccount->nickname }}</strong> yang memiliki jadwal domain dan buka hari ini ({{ $todayDayName }}).
           </span>
         </div>
 
@@ -398,7 +401,10 @@
           </div>
           @endif
 
-          <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm ms-1" title="Buka Detail Rute di Farming Planner">
+          <a href="{{ route('task.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm ms-1" title="Buka Task Tracker Akun Ini">
+            <i class="bi bi-check2-square me-1"></i>Task Tracker
+          </a>
+          <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn btn-outline-secondary btn-sm" title="Buka Detail Rute di Farming Planner">
             <span>Farming Planner</span>
             <i class="bi bi-arrow-right ms-1"></i>
           </a>
@@ -439,21 +445,21 @@
                   @php
                     $mat = $mItem['material'];
                   @endphp
-                  <div class="today-mat-item d-flex align-items-center justify-content-between gap-2 rounded {{ $mItem['is_needed_by_task'] ? 'mat-needed-highlight' : '' }}">
+                  <div class="today-mat-item d-flex align-items-center justify-content-between gap-2 rounded {{ $mItem['is_needed_by_task'] ? 'mat-needed-highlight' : '' }}" id="dash-mat-{{ $mat->id }}">
                     <div class="d-flex align-items-center gap-2 overflow-hidden">
                       <div class="today-mat-thumb">
                         @if($mat->images)
-                          <img src="{{ $mat->images }}" width="28" height="28" class="rounded" style="object-fit: cover;" alt="{{ $mat->name }}">
+                          <img src="{{ $mat->images }}" width="30" height="30" class="rounded" style="object-fit: cover;" alt="{{ $mat->name }}">
                         @else
                           <i class="bi bi-gem text-gold"></i>
                         @endif
                       </div>
                       <div class="overflow-hidden">
-                        <div class="text-white small fw-semibold text-truncate" style="font-size: 0.78rem;">
+                        <div class="text-white small fw-semibold text-truncate" style="font-size: 0.8rem;">
                           {{ $mat->name }}
                         </div>
                         <div class="d-flex align-items-center gap-1.5 flex-wrap" style="font-size: 0.68rem; color: #94a3b8;">
-                          <span>Stok: <strong class="text-light">{{ number_format($mItem['owned']) }}</strong></span>
+                          <span>Target: <strong class="text-light">{{ number_format($mItem['required']) }}</strong></span>
                           @if($mItem['is_needed_by_task'])
                             <span class="text-secondary">&bull;</span>
                             <span class="text-gold text-truncate">Untuk: {{ implode(', ', $mItem['tasks']) }}</span>
@@ -462,11 +468,23 @@
                       </div>
                     </div>
 
-                    @if($mItem['is_needed_by_task'] && $mItem['missing'] > 0)
-                      <span class="badge badge-kurang-sm flex-shrink-0">
-                        -{{ number_format($mItem['missing']) }}
-                      </span>
-                    @endif
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                      @if(!empty($mItem['sub_tasks']))
+                        @foreach($mItem['sub_tasks'] as $subT)
+                          <button type="button" 
+                                  class="btn btn-sm btn-outline-success py-1 px-2 rounded d-flex align-items-center gap-1 dash-checklist-btn" 
+                                  style="font-size: 0.68rem; border-color: rgba(34, 197, 94, 0.4);"
+                                  onclick="quickCheckSubtask({{ $subT['id'] }}, this)" 
+                                  title="Tandai selesai untuk {{ $subT['task_name'] }}">
+                            <i class="bi bi-check-circle"></i> Selesai
+                          </button>
+                        @endforeach
+                      @else
+                        <span class="badge bg-warning text-dark px-2 py-1 fw-bold" style="font-size: 0.68rem;">
+                          <i class="bi bi-hourglass-split me-0.5"></i>Perlu Difarming
+                        </span>
+                      @endif
+                    </div>
                   </div>
                 @endforeach
               </div>
@@ -475,13 +493,18 @@
         @empty
           <div class="col-12">
             <div class="text-center py-4 px-3 rounded" style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(200, 170, 110, 0.25);">
-              <i class="bi bi-calendar-x text-gold fs-3 d-block mb-2"></i>
-              <div class="text-white fw-bold mb-1">Tidak Ada Material Task Terjadwal yang Buka Hari Ini ({{ $todayDayName }})</div>
-              <div class="text-muted small mb-3">Material yang dibutuhkan task aktif Anda saat ini berotasi pada hari lain (Senin, Kamis, atau Minggu) atau merupakan drop open world.</div>
-              <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm d-inline-flex">
-                <span>Lihat Jadwal Lengkap di Farming Planner</span>
-                <i class="bi bi-arrow-right ms-1"></i>
-              </a>
+              <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
+              <div class="text-white fw-bold mb-1">Tidak Ada Material Task yang Perlu Difarming Hari Ini ({{ $todayDayName }})</div>
+              <div class="text-muted small mb-3">Semua material task untuk akun <strong>{{ $activeAccount->nickname }}</strong> hari ini sudah selesai atau berotasi di hari lain.</div>
+              <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <a href="{{ route('task.index', ['account_id' => $activeAccount->id]) }}" class="btn-genshin btn-genshin-sm">
+                  <i class="bi bi-check2-square me-1"></i>Task Tracker Akun Ini
+                </a>
+                <a href="{{ route('farming-planner.index', ['account_id' => $activeAccount->id]) }}" class="btn btn-outline-secondary btn-sm">
+                  <span>Lihat Jadwal di Farming Planner</span>
+                  <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
             </div>
           </div>
         @endforelse
@@ -977,6 +1000,57 @@
 
 @push('scripts')
 <script>
+    window.quickCheckSubtask = function(subTaskId, btn) {
+    const $btn = $(btn);
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+
+    fetch(`/task/toggle-subtask/${subTaskId}`, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const itemElem = $btn.closest('.today-mat-item');
+        if (itemElem.length) {
+          itemElem.css('transition', 'all 0.3s ease');
+          itemElem.css('opacity', '0');
+          itemElem.css('transform', 'translateX(20px)');
+          setTimeout(() => {
+            const domainCard = itemElem.closest('.today-domain-card');
+            itemElem.remove();
+            if (domainCard.find('.today-mat-item').length === 0) {
+              domainCard.closest('.today-domain-col').fadeOut(300, function() {
+                $(this).remove();
+                if ($('#todayDomainsContainer .today-domain-col').length === 0) {
+                  window.location.reload();
+                }
+              });
+            }
+          }, 300);
+        }
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Material berhasil ditandai selesai!',
+          showConfirmButton: false,
+          timer: 1800
+        });
+      } else {
+        $btn.prop('disabled', false).html('<i class="bi bi-check-circle"></i> Selesai');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      $btn.prop('disabled', false).html('<i class="bi bi-check-circle"></i> Selesai');
+    });
+  };
+
   window.filterTodayMaterials = function(type, btn) {
     $('.today-filter-btn').removeClass('active');
     $(btn).addClass('active');

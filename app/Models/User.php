@@ -40,5 +40,14 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
+
+    /**
+     * Akun game yang dimiliki pengguna
+     */
+    public function gameAccounts()
+    {
+        return $this->hasMany(GameAccount::class);
+    }
 }

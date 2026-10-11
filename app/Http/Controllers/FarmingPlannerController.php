@@ -22,6 +22,7 @@ class FarmingPlannerController extends Controller
             ? InventoryMaterial::where('game_account_id', $activeAccount->id)->pluck('amount', 'material_id')
             : collect();
         $tasks = Task::with(['sub_task.material.family'])
+            ->where('game_account_id', $activeAccount?->id)
             ->where('status', '!=', 'complete')
             ->orderBy('prioritas')
             ->get();
@@ -29,6 +30,9 @@ class FarmingPlannerController extends Controller
 
         foreach ($tasks as $task) {
             foreach ($task->sub_task as $subTask) {
+                if ($subTask->is_completed) {
+                    continue; // Skip sub-task yang sudah selesai / checklist
+                }
                 $material = $subTask->material;
                 if (!$material) {
                     continue;

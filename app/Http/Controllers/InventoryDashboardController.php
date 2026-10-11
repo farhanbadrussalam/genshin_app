@@ -132,10 +132,12 @@ class InventoryDashboardController extends Controller
 
         // ── 4. STATS MATERIAL & TASK ─────────────────────────────────────────
         $invMaterials = InventoryMaterial::where('game_account_id', $accId)->get();
-        $totalMaterialTypes    = $invMaterials->where('quantity', '>', 0)->count();
-        $totalMaterialQuantity = $invMaterials->sum('quantity');
+        $totalMaterialTypes    = $invMaterials->where('amount', '>', 0)->count();
+        $totalMaterialQuantity = $invMaterials->sum('amount');
 
-        $activeTasksCount = task::where('status', '!=', 'complete')->count();
+        $activeTasksCount = task::where('game_account_id', $accId)
+            ->where('status', '!=', 'complete')
+            ->count();
 
         // ── 5. SHOWCASE KARAKTER TERATAS ─────────────────────────────────────
         $topCharacters = $invCharacters->sortByDesc(function ($c) {
@@ -168,8 +170,9 @@ class InventoryDashboardController extends Controller
         $todayLabelEn = strtolower($today->englishDayOfWeek);
         $isSunday = ($today->dayOfWeekIso === 7);
 
-        // Ambil task aktif
+        // Ambil task aktif HANYA untuk akun game yang sedang aktif dipilih ($accId)
         $activeTasks = task::with(['sub_task.material'])
+            ->where('game_account_id', $accId)
             ->where('status', '!=', 'complete')
             ->get();
 
@@ -177,13 +180,22 @@ class InventoryDashboardController extends Controller
         foreach ($activeTasks as $t) {
             foreach ($t->sub_task as $st) {
                 if (!$st->material) continue;
+                // Lewati sub-task yang sudah selesai dikerjakan / dicentang checklist
+                if ($st->is_completed) continue;
+
                 $matId = $st->material->id;
                 $taskNeededByMaterial[$matId] ??= [
                     'tasks' => [],
                     'required' => 0,
+                    'sub_tasks' => [],
                 ];
                 $taskNeededByMaterial[$matId]['tasks'][] = html_entity_decode($t->nama_task, ENT_QUOTES, 'UTF-8');
                 $taskNeededByMaterial[$matId]['required'] += (int) $st->amount;
+                $taskNeededByMaterial[$matId]['sub_tasks'][] = [
+                    'id' => $st->id,
+                    'task_id' => $t->id,
+                    'task_name' => html_entity_decode($t->nama_task, ENT_QUOTES, 'UTF-8'),
+                ];
             }
         }
 
@@ -227,6 +239,7 @@ class InventoryDashboardController extends Controller
                 $required = (int) $neededInfo['required'];
                 $missing = max(0, $required - $owned);
                 $tasks = array_values(array_unique($neededInfo['tasks']));
+                $subTasks = $neededInfo['sub_tasks'] ?? [];
 
                 return [
                     'material' => $mat,
@@ -235,6 +248,7 @@ class InventoryDashboardController extends Controller
                     'missing' => $missing,
                     'is_needed_by_task' => true,
                     'tasks' => $tasks,
+                    'sub_tasks' => $subTasks,
                 ];
             })->sortByDesc('material.rarity')->values();
 

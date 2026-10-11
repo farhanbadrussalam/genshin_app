@@ -112,6 +112,25 @@
         border-radius: 6px;
     }
 
+    .badge-farming-today {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        background: rgba(16, 185, 129, 0.18) !important;
+        border: 1px solid rgba(16, 185, 129, 0.45) !important;
+        color: #6ee7b7 !important;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1.2;
+    }
+
+    .checklist-progress-text {
+        font-size: 0.75rem;
+        color: #94a3b8 !important;
+        font-weight: 500;
+    }
+
     /* Checkbox kustom yang elegan */
     .chk-subtask {
         width: 22px;
@@ -156,6 +175,42 @@
         border-radius: 16px !important;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
         color: #f1f2f6;
+    }
+
+    /* Task Card Collapse & Toggle */
+    .btn-task-toggle {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #cbd5e1;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+    .btn-task-toggle:hover {
+        background: rgba(200, 170, 110, 0.2);
+        border-color: #c8aa6e;
+        color: #ffffff;
+    }
+    .btn-task-toggle .toggle-icon {
+        transition: transform 0.25s ease;
+        font-size: 1.1rem;
+    }
+    .btn-task-toggle.collapsed .toggle-icon {
+        transform: rotate(180deg);
+    }
+    .task-header-clickable {
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s ease;
+    }
+    .task-header-clickable:hover {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
     }
 </style>
 @endpush
@@ -268,14 +323,14 @@
                 <a class="nav-link {{ $currentStatus === 'start' ? 'active' : '' }}" 
                    href="{{ route('task.index', ['account_id' => $activeAccount?->id, 'status' => 'start']) }}">
                     <i class="bi bi-clock-history me-1"></i>Sedang Dikerjakan
-                    <span class="badge bg-dark ms-1">{{ $activeCount }}</span>
+                    <span class="badge rounded-pill ms-1" style="background: rgba(255, 255, 255, 0.15); color: #f8fafc; font-size: 0.72rem;">{{ $activeCount }}</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ $currentStatus === 'complete' ? 'active' : '' }}" 
                    href="{{ route('task.index', ['account_id' => $activeAccount?->id, 'status' => 'complete']) }}">
                     <i class="bi bi-check-all me-1"></i>Sudah Selesai
-                    <span class="badge bg-dark ms-1">{{ $completedCount }}</span>
+                    <span class="badge rounded-pill ms-1" style="background: rgba(255, 255, 255, 0.15); color: #f8fafc; font-size: 0.72rem;">{{ $completedCount }}</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -292,6 +347,22 @@
                    placeholder="Cari task / karakter / bahan...">
         </div>
     </div>
+
+    {{-- Task Toolbar & Collapse Controls --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 px-1">
+        <div class="small text-secondary" id="taskCountLabel" style="color: #cbd5e1 !important;">
+            Menampilkan <strong class="text-white">{{ $dataTask->count() }}</strong> target upgrade
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-3 rounded-pill" id="btnExpandAllTasks" title="Buka seluruh rincian checklist task" style="font-size: 0.78rem; border-color: rgba(255, 255, 255, 0.18); color: #cbd5e1;">
+                <i class="bi bi-chevron-bar-expand me-1 text-gold"></i>Buka Semua
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-3 rounded-pill" id="btnCollapseAllTasks" title="Tutup seluruh rincian checklist task" style="font-size: 0.78rem; border-color: rgba(255, 255, 255, 0.18); color: #cbd5e1;">
+                <i class="bi bi-chevron-bar-contract me-1 text-gold"></i>Tutup Semua
+            </button>
+        </div>
+    </div>
+
     {{-- Task List Container --}}
     <div id="taskListContainer">
         @forelse($dataTask as $index => $task)
@@ -308,7 +379,7 @@
                  data-jenis="{{ strtolower($task->jenis) }}">
                 
                 {{-- Task Header --}}
-                <div class="task-header-box">
+                <div class="task-header-box task-header-clickable" data-target="#taskCollapse{{ $task->id }}">
                     <div class="d-flex align-items-center gap-3">
                         @if($task->images)
                             <img src="{{ $task->images }}" alt="{{ $task->nama_task }}" class="task-thumb"
@@ -325,7 +396,7 @@
                                     {{ $task->nama_task }}
                                 </h3>
                                 @if($isCompleted)
-                                    <span class="badge bg-success bg-opacity-25 border border-success text-success small" style="font-size: 0.72rem;">
+                                    <span class="badge" style="background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.5); color: #86efac; font-size: 0.72rem; font-weight: 600;">
                                         <i class="bi bi-check2-circle me-1"></i>Selesai
                                     </span>
                                 @endif
@@ -336,12 +407,12 @@
                                     P{{ $task->prioritas }}
                                 </span>
                                 @if($task->has_farming_today && !$isCompleted)
-                                    <span class="badge bg-success bg-opacity-20 border border-success border-opacity-40 text-success small" style="font-size: 0.7rem;">
+                                    <span class="badge-farming-today">
                                         <i class="bi bi-calendar-check-fill me-1"></i>Buka Hari Ini ({{ $todayName }})
                                     </span>
                                 @endif
-                                <span class="small text-secondary" style="font-size: 0.75rem;" id="progressText_{{ $task->id }}">
-                                    {{ $task->completed_subtasks }}/{{ $task->total_subtasks }} Checklist Selesai ({{ $task->progress_pct }}%)
+                                <span class="checklist-progress-text" id="progressText_{{ $task->id }}">
+                                    <strong style="color: #cbd5e1;">{{ $task->completed_subtasks }}/{{ $task->total_subtasks }}</strong> Checklist Selesai ({{ $task->progress_pct }}%)
                                 </span>
                             </div>
                         </div>
@@ -366,6 +437,10 @@
                                 <span class="d-none d-sm-inline">Buka Kembali</span>
                             </a>
                         @endif
+
+                        <button type="button" class="btn btn-task-toggle text-secondary" data-bs-toggle="collapse" data-bs-target="#taskCollapse{{ $task->id }}" title="Buka / Tutup Rincian Task">
+                            <i class="bi bi-chevron-up toggle-icon"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -375,8 +450,11 @@
                          style="width: {{ $task->progress_pct }}%;" aria-valuenow="{{ $task->progress_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
 
-                {{-- Daftar Resep Kebutuhan & Checklist Per Material --}}
-                <div class="task-sub-items mb-2">
+                {{-- Collapsible Content: Sub Tasks & Actions --}}
+                <div class="collapse show task-details-collapse" id="taskCollapse{{ $task->id }}">
+                    <div class="pt-1">
+                        {{-- Daftar Resep Kebutuhan & Checklist Per Material --}}
+                        <div class="task-sub-items mb-2">
                     @forelse ($task->sub_task as $sub_task)
                         @php
                             $mat = $sub_task->material;
@@ -399,12 +477,12 @@
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <span class="sub-mat-name fw-bold text-white small text-truncate">{{ $mat->name }}</span>
                                         @if($mat->is_available_today)
-                                            <span class="badge bg-success bg-opacity-25 border border-success border-opacity-40 text-success" style="font-size: 0.65rem;">
-                                                Domain Buka Hari Ini
+                                            <span class="badge-farming-today" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;">
+                                                <i class="bi bi-calendar-check-fill me-0.5"></i>Domain Buka Hari Ini
                                             </span>
                                         @elseif(!empty($daysArr))
-                                            <span class="badge bg-secondary bg-opacity-25 text-secondary" style="font-size: 0.65rem;">
-                                                Buka: {{ implode(', ', $daysArr) }}
+                                            <span class="badge" style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.3); color: #cbd5e1; font-size: 0.65rem;">
+                                                <i class="bi bi-calendar-event me-0.5"></i>Buka: {{ implode(', ', $daysArr) }}
                                             </span>
                                         @endif
                                     </div>
@@ -452,7 +530,8 @@
                             <a href="{{ route('task.toggle-status', ['id' => $task->id, 'redirect_status' => $currentStatus]) }}"
                                onclick="return confirm('Tandai task \"{{ $task->nama_task }}\" sebagai sudah selesai dikerjakan?');"
                                class="btn btn-success btn-sm fw-bold px-3 shadow-sm d-flex align-items-center gap-1"
-                               style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                               style="background: linear-gradient(135deg, #10b981, #059669); border: none;"
+                               title="Tandai task ini sudah selesai dikerjakan">
                                 <i class="bi bi-check-circle-fill me-1"></i>Selesai Dikerjakan
                             </a>
                         @else
@@ -461,6 +540,8 @@
                                 <i class="bi bi-arrow-counterclockwise me-1 text-warning"></i>Buka Kembali ke Aktif
                             </a>
                         @endif
+                    </div>
+                </div>
                     </div>
                 </div>
 
@@ -720,6 +801,39 @@
             console.error('Error toggling subtask:', err);
         });
     }
+
+    // Expand All / Collapse All functionality
+    $('#btnExpandAllTasks').on('click', function() {
+        $('.task-details-collapse').collapse('show');
+        $('.btn-task-toggle').removeClass('collapsed');
+    });
+
+    $('#btnCollapseAllTasks').on('click', function() {
+        $('.task-details-collapse').collapse('hide');
+        $('.btn-task-toggle').addClass('collapsed');
+    });
+
+    // Toggle icon rotation on collapse events
+    $(document).on('show.bs.collapse', '.task-details-collapse', function() {
+        const id = $(this).attr('id');
+        $(`[data-bs-target="#${id}"]`).removeClass('collapsed');
+    });
+
+    $(document).on('hide.bs.collapse', '.task-details-collapse', function() {
+        const id = $(this).attr('id');
+        $(`[data-bs-target="#${id}"]`).addClass('collapsed');
+    });
+
+    // Make whole header clickable to toggle collapse
+    $(document).on('click', '.task-header-clickable', function(e) {
+        if ($(e.target).closest('a, button, input, .btn').length) {
+            return;
+        }
+        const targetId = $(this).data('target');
+        if (targetId) {
+            $(targetId).collapse('toggle');
+        }
+    });
 
     // Filter pencarian task
     document.getElementById('filterTaskInput')?.addEventListener('input', function() {
