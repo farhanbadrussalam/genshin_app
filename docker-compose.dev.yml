@@ -1,0 +1,17 @@
+# Gunakan file ini HANYA jika ingin mengaktifkan live-sync kode host ke Docker (Development mode):
+# docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  app:
+    volumes:
+      - .:/var/www
+
+  nginx:
+    volumes:
+      - .:/var/www:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  hoyolab-service:
+    volumes:
+      - ./microservices/hoyolab-service:/app
+

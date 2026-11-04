@@ -45,4 +45,17 @@ return [
         'timeout' => env('HOYOLAB_MICROSERVICE_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Gemini AI API
+    |--------------------------------------------------------------------------
+    | Konfigurasi Google Gemini Vision & Multimodal API untuk ekstraksi data
+    | dan theorycrafting analysis.
+    */
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY', 'AIzaSyCICVWxkxEVGFwVgkzuFDaTmPQya6ox_bc'),
+        'model'   => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'timeout' => 45,
+    ],
+
 ];

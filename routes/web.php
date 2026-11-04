@@ -163,13 +163,24 @@ Route::middleware('auth')->group(function () {
         Route::get('ping', [HoyoLabController::class, 'pingMicroservice'])->name('ping');
     });
 
-    // ─── Party Analyzer ───────────────────────────────────────────────────────
+    // ─── Party Analyzer & Builder ──────────────────────────────────────────────
     Route::prefix('party')->name('party.')->group(function () {
         Route::get('/', [\App\Http\Controllers\PartyAnalyzerController::class, 'index'])->name('index');
-        Route::post('/analyze-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'analyzeAjax'])->name('analyze-ajax');
-        Route::post('/auto-generate', [\App\Http\Controllers\PartyAnalyzerController::class, 'autoGenerateAjax'])->name('auto-generate');
         Route::post('/save', [\App\Http\Controllers\PartyAnalyzerController::class, 'saveParty'])->name('save');
+        Route::put('/update/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'updateParty'])->name('update');
+        Route::post('/update/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'updateParty'])->name('update.post');
         Route::delete('/saved/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteParty'])->name('delete-saved');
+        Route::get('/characters-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'charactersAjax'])->name('characters-ajax');
+        Route::get('/list-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'listAjax'])->name('list-ajax');
+
+        // Benchmarks & AI Export
+        Route::post('/scan-benchmark', [\App\Http\Controllers\PartyAnalyzerController::class, 'scanBenchmarkAjax'])->name('scan-benchmark');
+        Route::post('/benchmarks', [\App\Http\Controllers\PartyAnalyzerController::class, 'storeBenchmark'])->name('benchmarks.store');
+        Route::get('/benchmarks/{partyBenchmark}', [\App\Http\Controllers\PartyAnalyzerController::class, 'showBenchmark'])->name('benchmarks.show');
+        Route::delete('/benchmarks/{partyBenchmark}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteBenchmark'])->name('benchmarks.delete');
+        Route::get('/benchmarks/{partyBenchmark}/export-prompt', [\App\Http\Controllers\PartyAnalyzerController::class, 'exportGeminiPrompt'])->name('benchmarks.export-prompt');
+        Route::get('/benchmarks/{partyBenchmark}/download-md', [\App\Http\Controllers\PartyAnalyzerController::class, 'downloadBenchmarkMarkdown'])->name('benchmarks.download-md');
+        Route::get('/benchmarks/{partyBenchmark}/download-json', [\App\Http\Controllers\PartyAnalyzerController::class, 'downloadBenchmarkJson'])->name('benchmarks.download-json');
     });
 
     // ─── Daily Resin & Auto Check-in ──────────────────────────────────────────

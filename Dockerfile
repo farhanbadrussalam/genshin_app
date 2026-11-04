@@ -49,6 +49,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Salin seluruh kode proyek ke dalam image
 COPY . /var/www
 
+# Install dependensi Composer di build time
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
 # Berikan izin ke www-data
 RUN chown -R www-data:www-data /var/www
 
