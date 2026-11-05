@@ -15,6 +15,11 @@ $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
 
+// Jika berjalan di lingkungan Vercel Serverless Function / Lambda, gunakan storage di /tmp
+if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || isset($_ENV['LAMBDA_TASK_ROOT'])) {
+    $app->useStoragePath('/tmp/storage');
+}
+
 /*
 |--------------------------------------------------------------------------
 | Bind Important Interfaces

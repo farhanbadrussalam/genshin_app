@@ -199,8 +199,15 @@ class PartyAnalyzerController extends Controller
             $extractedData = $this->benchmarkService->extractFromScreenshot($file);
             $evaluation = $this->benchmarkService->evaluateBenchmark($extractedData);
 
-            // Simpan screenshot sementara jika diperlukan
-            $path = $file->store('benchmarks', 'public');
+            // Simpan screenshot jika filesystem mengizinkan (aman di serverless/Vercel read-only filesystem)
+            $path = null;
+            try {
+                $path = $file->store('benchmarks', 'public');
+            } catch (\Throwable $storageError) {
+                // Di lingkungan serverless (seperti Vercel / Lambda), filesystem bersifat read-only.
+                // Ekstraksi Gemini tetap berhasil tanpa menyimpan file fisik ke disk.
+                $path = null;
+            }
 
             return response()->json([
                 'success'         => true,
