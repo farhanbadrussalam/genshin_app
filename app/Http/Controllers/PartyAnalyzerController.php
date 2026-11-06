@@ -268,13 +268,30 @@ class PartyAnalyzerController extends Controller
     }
 
     /**
-     * Ambil detail hasil pengujian
+     * Ambil detail hasil pengujian beserta seluruh riwayat pengujian party
      */
     public function showBenchmark(PartyBenchmark $partyBenchmark): JsonResponse
     {
+        $partyBenchmark->load('savedParty.benchmarks');
+        $allBenchmarks = $partyBenchmark->savedParty?->benchmarks()->latest()->get() ?? collect([$partyBenchmark]);
+
         return response()->json([
             'success'   => true,
             'benchmark' => $this->formatBenchmarkResource($partyBenchmark),
+            'history'   => $allBenchmarks->map(function ($b) {
+                return [
+                    'id'               => $b->id,
+                    'title'            => $b->title,
+                    'preset_name'      => $b->preset_name,
+                    'tier'             => $b->tier,
+                    'tier_color'       => $b->tier_color,
+                    'dps'              => $b->dps,
+                    'formatted_dps'    => number_format($b->dps, 0, ',', '.'),
+                    'total_damage'     => $b->total_damage,
+                    'formatted_damage' => number_format($b->total_damage, 0, ',', '.'),
+                    'created_at'       => $b->created_at?->format('d M Y, H:i') ?? '-',
+                ];
+            })->values(),
         ]);
     }
 
@@ -299,18 +316,162 @@ class PartyAnalyzerController extends Controller
     }
 
     /**
-     * Ekspor prompt markdown siap pakai untuk Gemini AI
+     * Ekspor prompt markdown siap pakai untuk Gemini AI beserta riwayat pengujian
      */
     public function exportGeminiPrompt(PartyBenchmark $partyBenchmark): JsonResponse
     {
-        $partyBenchmark->load('savedParty');
+        $partyBenchmark->load('savedParty.benchmarks');
+        if ($partyBenchmark->savedParty) {
+            $this->cacheCharactersForSavedParties(collect([$partyBenchmark->savedParty]));
+        }
+
+        $allBenchmarks = $partyBenchmark->savedParty?->benchmarks()->latest()->get() ?? collect([$partyBenchmark]);
         $prompt = $this->benchmarkService->generateGeminiPrompt($partyBenchmark);
 
         return response()->json([
-            'success' => true,
-            'title'   => "Prompt Gemini AI - " . ($partyBenchmark->savedParty?->name ?? 'Party Benchmark'),
-            'prompt'  => $prompt,
+            'success'    => true,
+            'title'      => "Prompt Gemini AI - " . ($partyBenchmark->savedParty?->name ?? 'Party Benchmark'),
+            'party_name' => $partyBenchmark->savedParty?->name ?? 'Party Benchmark',
+            'prompt'     => $prompt,
+            'benchmark'  => [
+                'id'            => $partyBenchmark->id,
+                'title'         => $partyBenchmark->title,
+                'preset_name'   => $partyBenchmark->preset_name,
+                'tier'          => $partyBenchmark->tier,
+                'tier_label'    => $partyBenchmark->tier_label,
+                'tier_color'    => $partyBenchmark->tier_color,
+                'dps'           => $partyBenchmark->dps,
+                'formatted_dps' => number_format($partyBenchmark->dps, 0, ',', '.'),
+                'created_at'    => $partyBenchmark->created_at?->format('d M Y, H:i') ?? '-',
+            ],
+            'history'    => $allBenchmarks->map(function ($b) {
+                return [
+                    'id'               => $b->id,
+                    'title'            => $b->title,
+                    'preset_name'      => $b->preset_name,
+                    'tier'             => $b->tier,
+                    'tier_color'       => $b->tier_color,
+                    'dps'              => $b->dps,
+                    'formatted_dps'    => number_format($b->dps, 0, ',', '.'),
+                    'total_damage'     => $b->total_damage,
+                    'formatted_damage' => number_format($b->total_damage, 0, ',', '.'),
+                    'created_at'       => $b->created_at?->format('d M Y, H:i') ?? '-',
+                ];
+            })->values(),
         ]);
+    }
+
+    /**
+     * Tanya-Jawab Interaktif dengan Asisten Theorycrafter Gemini AI
+     */
+    public function chatBenchmark(Request $request, PartyBenchmark $partyBenchmark): JsonResponse
+    {
+        $validated = $request->validate([
+            'message' => 'required|string|max:2000',
+            'history' => 'nullable|array|max:20',
+            'model'   => 'nullable|string|in:flash,pro',
+        ]);
+
+        try {
+            $partyBenchmark->load('savedParty');
+            if ($partyBenchmark->savedParty) {
+                $this->cacheCharactersForSavedParties(collect([$partyBenchmark->savedParty]));
+            }
+
+            $result = $this->benchmarkService->chatWithTheorycrafter(
+                $partyBenchmark,
+                $validated['message'],
+                $validated['history'] ?? [],
+                $validated['model'] ?? 'flash'
+            );
+
+            return response()->json([
+                'success'       => true,
+                'reply'         => $result['reply'],
+                'model_used'    => $result['model_used'],
+                'model_choice'  => $result['model_choice'],
+                'fallback_used' => $result['fallback_used'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Komparasi 2 Hasil Pengujian Benchmark (Matematika Instan & Analisis Mendalam Gemini AI)
+     */
+    public function compareBenchmarks(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'benchmark_a_id' => 'required|integer|exists:party_benchmarks,id',
+            'benchmark_b_id' => 'required|integer|exists:party_benchmarks,id',
+            'with_ai'        => 'nullable|boolean',
+            'model'          => 'nullable|string|in:flash,pro',
+        ]);
+
+        if ((int)$validated['benchmark_a_id'] === (int)$validated['benchmark_b_id']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pilih 2 hasil pengujian yang berbeda untuk dibandingkan.',
+            ], 422);
+        }
+
+        try {
+            $benchA = PartyBenchmark::with('savedParty.benchmarks')->findOrFail($validated['benchmark_a_id']);
+            $benchB = PartyBenchmark::with('savedParty')->findOrFail($validated['benchmark_b_id']);
+
+            $partiesToCache = collect([$benchA->savedParty, $benchB->savedParty])->filter();
+            if ($partiesToCache->isNotEmpty()) {
+                $this->cacheCharactersForSavedParties($partiesToCache);
+            }
+
+            $metrics = $this->benchmarkService->calculateComparisonMetrics($benchA, $benchB);
+            $allBenchmarks = $benchA->savedParty?->benchmarks()->latest()->get() ?? collect([$benchB, $benchA]);
+
+            $responsePayload = [
+                'success'     => true,
+                'party_name'  => $benchA->savedParty?->name ?? 'Party Benchmark',
+                'benchmark_a' => $this->formatBenchmarkResource($benchA),
+                'benchmark_b' => $this->formatBenchmarkResource($benchB),
+                'metrics'     => $metrics,
+                'history'     => $allBenchmarks->map(function ($b) {
+                    return [
+                        'id'               => $b->id,
+                        'title'            => $b->title,
+                        'preset_name'      => $b->preset_name,
+                        'tier'             => $b->tier,
+                        'tier_color'       => $b->tier_color,
+                        'dps'              => $b->dps,
+                        'formatted_dps'    => number_format($b->dps, 0, ',', '.'),
+                        'total_damage'     => $b->total_damage,
+                        'formatted_damage' => number_format($b->total_damage, 0, ',', '.'),
+                        'created_at'       => $b->created_at?->format('d M Y, H:i') ?? '-',
+                    ];
+                })->values(),
+            ];
+
+            if (!empty($validated['with_ai'])) {
+                $aiResult = $this->benchmarkService->compareBenchmarksWithAi(
+                    $benchA,
+                    $benchB,
+                    $validated['model'] ?? 'flash'
+                );
+                $responsePayload['ai_analysis']   = $aiResult['analysis'];
+                $responsePayload['model_used']    = $aiResult['model_used'];
+                $responsePayload['model_choice']  = $aiResult['model_choice'];
+                $responsePayload['fallback_used'] = $aiResult['fallback_used'];
+            }
+
+            return response()->json($responsePayload);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     /**

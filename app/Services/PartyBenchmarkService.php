@@ -476,4 +476,420 @@ TEXT;
 
         return implode("\n", $md);
     }
+
+    /**
+     * Asisten Tanya-Jawab Interaktif (Multi-turn Chat) dengan Gemini AI Theorycrafter
+     */
+    public function chatWithTheorycrafter(
+        PartyBenchmark $benchmark,
+        string $userMessage,
+        array $history = [],
+        string $modelChoice = 'flash'
+    ): array {
+        if (!$this->apiKey) {
+            throw new \Exception('GEMINI_API_KEY belum dikonfigurasi di file .env sistem.');
+        }
+
+        // Bangun konteks data benchmark lengkap
+        $benchmarkContext = $this->generateGeminiPrompt($benchmark);
+
+        $systemPrompt = <<<SYS
+Kamu adalah **Theorycrafter & Combat Analyst Genshin Impact Profesional**.
+Tugasmu adalah menjawab pertanyaan pemain, menganalisis hasil pengujian DPS mereka, membedah rotasi, serta memberikan saran build (stat karakter, senjata, artefak, dan urutan kombo Skill/Burst) secara akurat.
+
+Aturan Jawaban:
+1. Selalu gunakan **Bahasa Indonesia** yang jelas, ramah, dan terstruktur.
+2. Gunakan format Markdown (bullet points, penebalan **bold** pada angka/stat penting, dan sub-judul) agar nyaman dibaca di antarmuka chat.
+3. Selalu gunakan data aktual dari pengujian tim di bawah ini sebagai landasan analisis (jangan mengarang angka stat di luar data yang diberikan).
+4. Berikan saran yang spesifik, praktis, dan langsung bisa diterapkan di dalam game.
+
+=== DATA PENGUJIAN TIM SAAT INI ===
+{$benchmarkContext}
+SYS;
+
+        // Sanitasi riwayat percakapan agar selalu bergantian user <-> model secara valid
+        $contents = [];
+        $recentHistory = array_slice($history, -10);
+
+        foreach ($recentHistory as $turn) {
+            $role = ($turn['role'] ?? '') === 'user' ? 'user' : 'model';
+            $text = trim((string)($turn['content'] ?? $turn['text'] ?? ''));
+            if ($text === '') {
+                continue;
+            }
+
+            // Pastikan pesan pertama selalu 'user'
+            if (empty($contents) && $role !== 'user') {
+                continue;
+            }
+
+            // Jika role sama dengan pesan sebelumnya, gabungkan teksnya
+            $lastIdx = count($contents) - 1;
+            if ($lastIdx >= 0 && $contents[$lastIdx]['role'] === $role) {
+                $contents[$lastIdx]['parts'][0]['text'] .= "\n\n" . $text;
+            } else {
+                $contents[] = [
+                    'role'  => $role,
+                    'parts' => [['text' => $text]],
+                ];
+            }
+        }
+
+        // Tambahkan pesan terbaru dari user
+        $lastIdx = count($contents) - 1;
+        if ($lastIdx >= 0 && $contents[$lastIdx]['role'] === 'user') {
+            $contents[$lastIdx]['parts'][0]['text'] .= "\n\n" . trim($userMessage);
+        } else {
+            $contents[] = [
+                'role'  => 'user',
+                'parts' => [['text' => trim($userMessage)]],
+            ];
+        }
+
+        // Tentukan urutan model berdasarkan pilihan user ('flash' atau 'pro') beserta fallback aman
+        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
+        if ($modelChoice === 'pro') {
+            $candidateModels = ['gemini-2.5-pro', 'gemini-1.5-pro', $defaultFlash];
+        } else {
+            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.0-flash']));
+        }
+
+        $payload = [
+            'system_instruction' => [
+                'parts' => [
+                    ['text' => $systemPrompt],
+                ],
+            ],
+            'contents' => $contents,
+            'generationConfig' => [
+                'temperature'     => 0.4,
+                'maxOutputTokens' => 4096,
+            ],
+        ];
+
+        $lastError = null;
+        $usedModel = $candidateModels[0];
+        $fallbackUsed = false;
+
+        foreach ($candidateModels as $idx => $modelName) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
+
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(60)->post($url, $payload);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $parts = $result['candidates'][0]['content']['parts'] ?? [];
+                    $replyParts = [];
+
+                    foreach ($parts as $part) {
+                        if (!empty($part['thought'])) {
+                            continue;
+                        }
+                        if (isset($part['text'])) {
+                            $replyParts[] = $part['text'];
+                        }
+                    }
+
+                    $replyText = trim(implode("\n", $replyParts));
+                    if ($replyText !== '') {
+                        $usedModel = $modelName;
+                        $fallbackUsed = ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash'));
+
+                        return [
+                            'reply'         => $replyText,
+                            'model_used'    => $usedModel,
+                            'model_choice'  => $modelChoice,
+                            'fallback_used' => $fallbackUsed,
+                        ];
+                    }
+                }
+
+                $status = $response->status();
+                $errMsg = $response->json('error.message') ?? "HTTP {$status}";
+                $lastError = $errMsg;
+                Log::warning("Gemini Chat percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                // Jika error karena API key invalid (400/403 API_KEY_INVALID), hentikan loop
+                if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
+                    break;
+                }
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+                Log::warning("Gemini Chat exception pada model {$modelName}: " . $e->getMessage());
+            }
+        }
+
+        throw new \Exception('Gagal mendapatkan respons dari Gemini AI: ' . ($lastError ?? 'Tidak ada respons dari server.'));
+    }
+
+    /**
+     * Hitung selisih metrik matematika & perubahan stat karakter antara 2 pengujian (Uji A vs Uji B)
+     */
+    public function calculateComparisonMetrics(PartyBenchmark $benchA, PartyBenchmark $benchB): array
+    {
+        $dpsA = (int)$benchA->dps;
+        $dpsB = (int)$benchB->dps;
+        $dpsDiff = $dpsB - $dpsA;
+        $dpsPct = $dpsA > 0 ? round(($dpsDiff / $dpsA) * 100, 1) : 0.0;
+
+        $dmgA = (int)$benchA->total_damage;
+        $dmgB = (int)$benchB->total_damage;
+        $dmgDiff = $dmgB - $dmgA;
+        $dmgPct = $dmgA > 0 ? round(($dmgDiff / $dmgA) * 100, 1) : 0.0;
+
+        $maxA = (int)$benchA->max_hit;
+        $maxB = (int)$benchB->max_hit;
+        $maxDiff = $maxB - $maxA;
+        $maxPct = $maxA > 0 ? round(($maxDiff / $maxA) * 100, 1) : 0.0;
+
+        $timeA = (float)$benchA->total_time;
+        $timeB = (float)$benchB->total_time;
+        $timeDiff = round($timeB - $timeA, 2);
+
+        $rotA = $benchA->rotations ?? [];
+        $rotB = $benchB->rotations ?? [];
+        $avgDurA = count($rotA) > 0 ? round(array_sum(array_column($rotA, 'time')) / count($rotA), 2) : 0.0;
+        $avgDurB = count($rotB) > 0 ? round(array_sum(array_column($rotB, 'time')) / count($rotB), 2) : 0.0;
+        $avgDurDiff = round($avgDurB - $avgDurA, 2);
+
+        // Pemetaan stat & kontribusi damage per karakter
+        $statsMapA = [];
+        foreach ($benchA->character_stats ?? [] as $st) {
+            $key = strtolower(trim($st['name'] ?? ''));
+            if ($key !== '') {
+                $statsMapA[$key] = $st;
+            }
+        }
+
+        $statsMapB = [];
+        foreach ($benchB->character_stats ?? [] as $st) {
+            $key = strtolower(trim($st['name'] ?? ''));
+            if ($key !== '') {
+                $statsMapB[$key] = $st;
+            }
+        }
+
+        $dmgMapA = [];
+        foreach ($benchA->character_dmg_distribution ?? [] as $cd) {
+            $key = strtolower(trim($cd['name'] ?? ''));
+            if ($key !== '') {
+                $dmgMapA[$key] = $cd;
+            }
+        }
+
+        $dmgMapB = [];
+        foreach ($benchB->character_dmg_distribution ?? [] as $cd) {
+            $key = strtolower(trim($cd['name'] ?? ''));
+            if ($key !== '') {
+                $dmgMapB[$key] = $cd;
+            }
+        }
+
+        $allKeys = array_values(array_unique(array_merge(
+            array_keys($statsMapA),
+            array_keys($statsMapB),
+            array_keys($dmgMapA),
+            array_keys($dmgMapB)
+        )));
+
+        $characterComparisons = [];
+        foreach ($allKeys as $key) {
+            $sA = $statsMapA[$key] ?? null;
+            $sB = $statsMapB[$key] ?? null;
+            $dA = $dmgMapA[$key] ?? null;
+            $dB = $dmgMapB[$key] ?? null;
+
+            $displayName = $sB['name'] ?? $sA['name'] ?? $dB['name'] ?? $dA['name'] ?? ucfirst($key);
+            $element = $sB['element'] ?? $sA['element'] ?? $dB['element'] ?? $dA['element'] ?? 'Multi';
+
+            $atkA = (int)($sA['total_atk'] ?? 0);
+            $atkB = (int)($sB['total_atk'] ?? 0);
+            $crA  = (float)($sA['crit_rate'] ?? 0);
+            $crB  = (float)($sB['crit_rate'] ?? 0);
+            $cdA  = (float)($sA['crit_dmg'] ?? 0);
+            $cdB  = (float)($sB['crit_dmg'] ?? 0);
+            $erA  = (float)($sA['energy_recharge'] ?? 0);
+            $erB  = (float)($sB['energy_recharge'] ?? 0);
+            $emA  = (int)($sA['elemental_mastery'] ?? 0);
+            $emB  = (int)($sB['elemental_mastery'] ?? 0);
+            $hpA  = (int)($sA['hp'] ?? 0);
+            $hpB  = (int)($sB['hp'] ?? 0);
+
+            $pctA = (int)($dA['percentage'] ?? 0);
+            $pctB = (int)($dB['percentage'] ?? 0);
+            $charDmgA = (int)($dA['damage'] ?? 0);
+            $charDmgB = (int)($dB['damage'] ?? 0);
+
+            $characterComparisons[] = [
+                'name'      => $displayName,
+                'element'   => $element,
+                'hp_a'      => $hpA,
+                'hp_b'      => $hpB,
+                'hp_diff'   => $hpB - $hpA,
+                'atk_a'     => $atkA,
+                'atk_b'     => $atkB,
+                'atk_diff'  => $atkB - $atkA,
+                'cr_a'      => $crA,
+                'cr_b'      => $crB,
+                'cr_diff'   => round($crB - $crA, 1),
+                'cd_a'      => $cdA,
+                'cd_b'      => $cdB,
+                'cd_diff'   => round($cdB - $cdA, 1),
+                'er_a'      => $erA,
+                'er_b'      => $erB,
+                'er_diff'   => round($erB - $erA, 1),
+                'em_a'      => $emA,
+                'em_b'      => $emB,
+                'em_diff'   => $emB - $emA,
+                'dmg_pct_a' => $pctA,
+                'dmg_pct_b' => $pctB,
+                'dmg_pct_diff' => $pctB - $pctA,
+                'dmg_a'     => $charDmgA,
+                'dmg_b'     => $charDmgB,
+                'dmg_diff'  => $charDmgB - $charDmgA,
+            ];
+        }
+
+        return [
+            'dps_a'           => $dpsA,
+            'dps_b'           => $dpsB,
+            'dps_diff'        => $dpsDiff,
+            'dps_pct'         => $dpsPct,
+            'total_damage_a'  => $dmgA,
+            'total_damage_b'  => $dmgB,
+            'damage_diff'     => $dmgDiff,
+            'damage_pct'      => $dmgPct,
+            'max_hit_a'       => $maxA,
+            'max_hit_b'       => $maxB,
+            'max_hit_diff'    => $maxDiff,
+            'max_hit_pct'     => $maxPct,
+            'total_time_a'    => $timeA,
+            'total_time_b'    => $timeB,
+            'time_diff'       => $timeDiff,
+            'avg_rot_dur_a'   => $avgDurA,
+            'avg_rot_dur_b'   => $avgDurB,
+            'avg_rot_diff'    => $avgDurDiff,
+            'rotations_cnt_a' => count($rotA),
+            'rotations_cnt_b' => count($rotB),
+            'characters'      => $characterComparisons,
+        ];
+    }
+
+    /**
+     * Analisis Komparasi Mendalam 2 Pengujian Benchmark menggunakan Gemini AI
+     */
+    public function compareBenchmarksWithAi(
+        PartyBenchmark $benchA,
+        PartyBenchmark $benchB,
+        string $modelChoice = 'flash'
+    ): array {
+        if (!$this->apiKey) {
+            throw new \Exception('GEMINI_API_KEY belum dikonfigurasi di file .env sistem.');
+        }
+
+        $metrics = $this->calculateComparisonMetrics($benchA, $benchB);
+        $contextA = $this->generateGeminiPrompt($benchA);
+        $contextB = $this->generateGeminiPrompt($benchB);
+
+        $dpsSign = $metrics['dps_diff'] >= 0 ? '+' : '';
+        $rotSign = $metrics['avg_rot_diff'] >= 0 ? '+' : '';
+
+        $prompt = <<<PROMPT
+Halo Gemini! Bertindaklah sebagai **Theorycrafter & Combat Analyst Genshin Impact Profesional**.
+Saya ingin membandingkan **2 Hasil Pengujian Benchmark (A/B Testing)** dari party saya untuk mengetahui mengapa performa keduanya berbeda dan build/rotasi mana yang paling optimal.
+
+### RINGKASAN DELTA MATEMATIKA (UJI A ➔ UJI B):
+- **Perubahan Rata-rata DPS**: {$metrics['dps_a']} ➔ {$metrics['dps_b']} ({$dpsSign}{$metrics['dps_diff']} DPS / {$dpsSign}{$metrics['dps_pct']}%)
+- **Perubahan Hit Terkuat (Nuke)**: {$metrics['max_hit_a']} ➔ {$metrics['max_hit_b']} ({$metrics['max_hit_pct']}%)
+- **Perubahan Rata-rata Durasi Rotasi**: {$metrics['avg_rot_dur_a']} detik ➔ {$metrics['avg_rot_dur_b']} detik ({$rotSign}{$metrics['avg_rot_diff']} detik)
+- **Total Waktu Pengujian**: {$metrics['total_time_a']} detik ➔ {$metrics['total_time_b']} detik
+
+=== DATA LENGKAP UJI A (ACUAN / SEBELUMNYA) ===
+{$contextA}
+
+=== DATA LENGKAP UJI B (PEMBANDING / TERBARU) ===
+{$contextB}
+
+### INSTRUKSI LAPORAN KOMPARASI:
+Berikan analisis komparasi yang tajam, terstruktur dalam **Bahasa Indonesia** menggunakan Markdown dengan susunan berikut:
+1. **🏆 Ringkasan Utama & Pemenang Pengujian**: Sebutkan pengujian mana yang lebih unggul secara keseluruhan dan seberapa signifikan peningkatan/penurunan performanya.
+2. **🧬 Analisis Perubahan Stat & Build Karakter**: Bedah perubahan stat antar karakter (ATK, HP, CRIT Rate, CRIT DMG, ER%, EM) dari Uji A ke Uji B dan jelaskan bagaimana perubahan stat tersebut mempengaruhi kontribusi damage.
+3. **🔄 Evaluasi Kecepatan & Konsistensi Rotasi**: Bandingkan durasi dan kestabilan rotasi antara Uji A dan Uji B. Jelaskan apakah masalah Energy Recharge (ER%) membaik atau memburuk.
+4. **💡 Kesimpulan & Rekomendasi Optimasi Lanjutan**: Setup mana yang wajib dipakai untuk Spiral Abyss Lantai 12, serta saran penyempurnaan berikutnya.
+PROMPT;
+
+        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
+        if ($modelChoice === 'pro') {
+            $candidateModels = ['gemini-2.5-pro', 'gemini-1.5-pro', $defaultFlash];
+        } else {
+            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.0-flash']));
+        }
+
+        $payload = [
+            'contents' => [
+                [
+                    'role'  => 'user',
+                    'parts' => [['text' => $prompt]],
+                ],
+            ],
+            'generationConfig' => [
+                'temperature'     => 0.35,
+                'maxOutputTokens' => 4096,
+            ],
+        ];
+
+        $lastError = null;
+        foreach ($candidateModels as $idx => $modelName) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
+
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(60)->post($url, $payload);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $parts = $result['candidates'][0]['content']['parts'] ?? [];
+                    $replyParts = [];
+
+                    foreach ($parts as $part) {
+                        if (!empty($part['thought'])) {
+                            continue;
+                        }
+                        if (isset($part['text'])) {
+                            $replyParts[] = $part['text'];
+                        }
+                    }
+
+                    $replyText = trim(implode("\n", $replyParts));
+                    if ($replyText !== '') {
+                        return [
+                            'analysis'      => $replyText,
+                            'metrics'       => $metrics,
+                            'model_used'    => $modelName,
+                            'model_choice'  => $modelChoice,
+                            'fallback_used' => ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash')),
+                        ];
+                    }
+                }
+
+                $status = $response->status();
+                $errMsg = $response->json('error.message') ?? "HTTP {$status}";
+                $lastError = $errMsg;
+                Log::warning("Gemini Compare percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
+                    break;
+                }
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+                Log::warning("Gemini Compare exception pada model {$modelName}: " . $e->getMessage());
+            }
+        }
+
+        throw new \Exception('Gagal menghasilkan analisis komparasi dari Gemini AI: ' . ($lastError ?? 'Tidak ada respons dari server.'));
+    }
 }

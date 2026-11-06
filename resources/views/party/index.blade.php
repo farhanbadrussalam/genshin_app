@@ -40,6 +40,9 @@
       </div>
 
       <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-warning" id="btnOpenCharPicker" title="Buka modal pemilihan karakter">
+          <i class="bi bi-person-plus-fill me-1"></i>Pilih Karakter
+        </button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearSlots" title="Kosongkan semua slot">
           <i class="bi bi-arrow-counterclockwise me-1"></i>Kosongkan Slot
         </button>
@@ -86,7 +89,7 @@
         <div class="d-flex align-items-center justify-content-between mb-2">
           <label class="form-label small text-gold fw-bold mb-0">
             <i class="bi bi-people-fill me-1"></i>Susunan 4 Karakter Party
-            <span class="text-muted fw-normal ms-1" style="font-size: 0.8rem;">(Klik salah satu slot untuk mengganti, atau klik karakter di bawah)</span>
+            <span class="text-muted fw-normal ms-1" style="font-size: 0.8rem;">(Klik slot untuk memilih / mengganti karakter)</span>
           </label>
           <span class="badge bg-dark border border-secondary text-warning" id="slotFilledCount">
             0 / 4 Karakter Terisi
@@ -155,85 +158,7 @@
     </div>
   </div>
 
-  {{-- CHARACTER PICKER / ROSTER GRID --}}
-  <div class="card genshin-panel-card mb-5 animate-fade-in-up" id="characterCatalogCard">
-    <div class="card-header border-bottom-genshin py-3">
-      <div class="row g-3 align-items-center justify-content-between">
-        <div class="col-12 col-lg-4">
-          <h5 class="text-gold font-display mb-0" style="font-size: 1.05rem;">
-            <i class="bi bi-grid-fill me-2"></i>Katalog Karakter
-            <span class="text-muted fw-normal small ms-1" id="catalogCountLabel">({{ count($characters) }})</span>
-          </h5>
-          <div class="small text-muted">
-            Klik kartu karakter untuk mengisi <strong class="text-warning" id="activeSlotNotice">Slot 1</strong>
-          </div>
-        </div>
 
-        {{-- Search Input --}}
-        <div class="col-12 col-sm-6 col-lg-4">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text genshin-input-group-text"><i class="bi bi-search text-gold"></i></span>
-            <input type="text" id="charSearchInput" class="form-control genshin-input" placeholder="Cari nama karakter (misal: Raiden, Hu Tao)...">
-            <button class="btn btn-outline-secondary" type="button" id="btnClearSearch" title="Reset pencarian">
-              <i class="bi bi-x"></i>
-            </button>
-          </div>
-        </div>
-
-        {{-- Filters (Rarity & Weapon) --}}
-        <div class="col-12 col-sm-6 col-lg-4 d-flex gap-2">
-          <select id="filterRarity" class="form-select form-select-sm genshin-select">
-            <option value="all">Semua Rarity</option>
-            <option value="5">⭐⭐⭐⭐⭐ Bintang 5</option>
-            <option value="4">⭐⭐⭐⭐ Bintang 4</option>
-          </select>
-
-          <select id="filterWeapon" class="form-select form-select-sm genshin-select">
-            <option value="all">Semua Senjata</option>
-            <option value="Sword">Sword</option>
-            <option value="Claymore">Claymore</option>
-            <option value="Polearm">Polearm</option>
-            <option value="Bow">Bow</option>
-            <option value="Catalyst">Catalyst</option>
-          </select>
-        </div>
-      </div>
-
-      {{-- Elemental Filter Pills --}}
-      <div class="d-flex flex-wrap align-items-center gap-1 mt-3 pt-2 border-top-genshin">
-        <span class="small text-muted me-2"><i class="bi bi-funnel me-1"></i>Elemen:</span>
-        <button type="button" class="btn-element-filter active" data-element="all">
-          Semua Elemen
-        </button>
-        @foreach([
-          'Pyro' => ['color' => '#ef4444', 'icon' => 'bi-fire'],
-          'Hydro' => ['color' => '#3b82f6', 'icon' => 'bi-droplet-fill'],
-          'Anemo' => ['color' => '#10b981', 'icon' => 'bi-wind'],
-          'Electro' => ['color' => '#a855f7', 'icon' => 'bi-lightning-charge-fill'],
-          'Dendro' => ['color' => '#22c55e', 'icon' => 'bi-flower1'],
-          'Cryo' => ['color' => '#06b6d4', 'icon' => 'bi-snow'],
-          'Geo' => ['color' => '#eab308', 'icon' => 'bi-shield-shaded'],
-        ] as $elem => $meta)
-          <button type="button" class="btn-element-filter" data-element="{{ $elem }}" style="--elem-color: {{ $meta['color'] }};">
-            <i class="bi {{ $meta['icon'] }} me-1"></i>{{ $elem }}
-          </button>
-        @endforeach
-      </div>
-    </div>
-
-    <div class="card-body p-3 p-md-4">
-      <div class="row g-2 g-md-3 row-cols-3 row-cols-sm-4 row-cols-md-6 row-cols-lg-6" id="characterGrid"></div>
-
-      <div class="text-center py-5 d-none" id="catalogEmptyState">
-        <i class="bi bi-emoji-frown text-muted" style="font-size: 2.5rem;"></i>
-        <h6 class="text-muted mt-2 mb-1">Tidak ada karakter yang cocok dengan filter</h6>
-        <p class="small text-secondary mb-3">Coba ubah kata kunci pencarian atau reset filter elemen/senjata.</p>
-        <button type="button" class="btn btn-sm btn-outline-warning" id="btnResetFilters">
-          <i class="bi bi-arrow-clockwise me-1"></i>Reset Semua Filter
-        </button>
-      </div>
-    </div>
-  </div>
 
   {{-- SAVED PARTIES LIST SECTION --}}
   <div class="saved-parties-section" id="savedPartiesSection">
@@ -272,6 +197,119 @@
     </div>
   </div>
 
+</div>
+
+{{-- =========================================================================
+     MODAL 0: PILIH KARAKTER (MODAL CHARACTER PICKER)
+     ========================================================================= --}}
+<div class="modal fade" id="modalCharacterPicker" tabindex="-1" aria-labelledby="modalCharacterPickerLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content genshin-panel-card border-gold-glow">
+      <div class="modal-header border-bottom-genshin py-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100 me-2">
+          <div>
+            <h5 class="text-gold font-display mb-0" id="modalCharacterPickerLabel" style="font-size: 1.15rem;">
+              <i class="bi bi-people-fill me-2"></i>Pilih Karakter untuk
+              <span class="badge bg-gold text-dark px-2 py-1 fw-bold" id="modalPickerActiveSlotBadge">Slot 1</span>
+            </h5>
+            <div class="small text-muted mt-1">
+              Klik kartu karakter untuk memasukkan ke slot aktif, atau gunakan tombol slot di samping untuk berpindah.
+            </div>
+          </div>
+
+          {{-- Quick Slot Switcher inside Modal --}}
+          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="modalSlotSwitcher">
+            <span class="small text-muted px-2 d-none d-sm-inline"><i class="bi bi-bullseye me-1"></i>Pilih Slot:</span>
+            @for($i = 0; $i < 4; $i++)
+              <button type="button" class="btn btn-sm btn-modal-slot-tab {{ $i === 0 ? 'active' : '' }}" data-slot="{{ $i }}" id="modalSlotTab_{{ $i }}">
+                Slot {{ $i + 1 }}
+              </button>
+            @endfor
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-3 p-md-4">
+        {{-- Search & Filters in Modal --}}
+        <div class="p-3 mb-3 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div class="row g-2 align-items-center justify-content-between">
+            <div class="col-12 col-md-5">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text genshin-input-group-text"><i class="bi bi-search text-gold"></i></span>
+                <input type="text" id="charSearchInput" class="form-control genshin-input" placeholder="Cari nama karakter (misal: Raiden, Hu Tao, Furina)...">
+                <button class="btn btn-outline-secondary" type="button" id="btnClearSearch" title="Reset pencarian">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <select id="filterRarity" class="form-select form-select-sm genshin-select">
+                <option value="all">Semua Rarity</option>
+                <option value="5">⭐⭐⭐⭐⭐ Bintang 5</option>
+                <option value="4">⭐⭐⭐⭐ Bintang 4</option>
+              </select>
+            </div>
+
+            <div class="col-6 col-md-4">
+              <select id="filterWeapon" class="form-select form-select-sm genshin-select">
+                <option value="all">Semua Senjata</option>
+                <option value="Sword">Sword</option>
+                <option value="Claymore">Claymore</option>
+                <option value="Polearm">Polearm</option>
+                <option value="Bow">Bow</option>
+                <option value="Catalyst">Catalyst</option>
+              </select>
+            </div>
+          </div>
+
+          {{-- Elemental Filter Pills --}}
+          <div class="d-flex flex-wrap align-items-center gap-1 mt-3 pt-2 border-top-genshin">
+            <span class="small text-muted me-2"><i class="bi bi-funnel me-1"></i>Elemen:</span>
+            <button type="button" class="btn-element-filter active" data-element="all">
+              Semua Elemen
+            </button>
+            @foreach([
+              'Pyro' => ['color' => '#ef4444', 'icon' => 'bi-fire'],
+              'Hydro' => ['color' => '#3b82f6', 'icon' => 'bi-droplet-fill'],
+              'Anemo' => ['color' => '#10b981', 'icon' => 'bi-wind'],
+              'Electro' => ['color' => '#a855f7', 'icon' => 'bi-lightning-charge-fill'],
+              'Dendro' => ['color' => '#22c55e', 'icon' => 'bi-flower1'],
+              'Cryo' => ['color' => '#06b6d4', 'icon' => 'bi-snow'],
+              'Geo' => ['color' => '#eab308', 'icon' => 'bi-shield-shaded'],
+            ] as $elem => $meta)
+              <button type="button" class="btn-element-filter" data-element="{{ $elem }}" style="--elem-color: {{ $meta['color'] }};">
+                <i class="bi {{ $meta['icon'] }} me-1"></i>{{ $elem }}
+              </button>
+            @endforeach
+            <span class="ms-auto small text-muted" id="catalogCountLabel">({{ count($characters) }})</span>
+          </div>
+        </div>
+
+        {{-- Character Grid inside Modal --}}
+        <div class="row g-2 g-md-3 row-cols-3 row-cols-sm-4 row-cols-md-6" id="characterGrid" style="max-height: 480px; overflow-y: auto; padding-right: 4px;"></div>
+
+        <div class="text-center py-5 d-none" id="catalogEmptyState">
+          <i class="bi bi-emoji-frown text-muted" style="font-size: 2.5rem;"></i>
+          <h6 class="text-muted mt-2 mb-1">Tidak ada karakter yang cocok dengan filter</h6>
+          <p class="small text-secondary mb-3">Coba ubah kata kunci pencarian atau reset filter elemen/senjata.</p>
+          <button type="button" class="btn btn-sm btn-outline-warning" id="btnResetFilters">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reset Semua Filter
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top-genshin py-2 d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+          <span class="text-warning"><i class="bi bi-info-circle me-1"></i>Tips:</span> Klik karakter untuk mengisi slot. Jika belum 4 karakter, slot target otomatis bergeser ke slot kosong berikutnya.
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 {{-- =========================================================================
@@ -464,6 +502,20 @@
       </div>
 
       <div class="modal-body p-3 p-md-4" style="background: #0d101a;">
+        {{-- Riwayat Pengujian Selector Bar --}}
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 mb-3 rounded" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1);">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-warning"></i>
+            <span class="small text-white fw-bold">Riwayat Pengujian:</span>
+            <span class="badge bg-dark border border-secondary text-gold" id="viewBenchHistoryCountBadge">1 Uji Tersimpan</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end" style="max-width: 480px;">
+            <select id="selectBenchmarkHistory" class="form-select form-select-sm genshin-select py-1">
+              <!-- Opsi riwayat benchmark diisi dinamis via JS -->
+            </select>
+          </div>
+        </div>
+
         {{-- Top 4 Big Metric Cards --}}
         <div class="row g-2 mb-3">
           <div class="col-6 col-md-3">
@@ -564,9 +616,12 @@
         <button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteCurrentBenchmark">
           <i class="bi bi-trash3 me-1"></i>Hapus Uji Ini
         </button>
-        <div class="d-flex align-items-center gap-2">
-          <button type="button" class="btn btn-sm btn-outline-info" id="btnExportGeminiFromView">
-            <i class="bi bi-cpu-fill me-1"></i>Export Prompt Gemini AI
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-info d-none" id="btnCompareFromView">
+            <i class="bi bi-arrow-left-right me-1"></i>Bandingkan Uji
+          </button>
+          <button type="button" class="btn btn-sm btn-genshin" id="btnExportGeminiFromView">
+            <i class="bi bi-robot me-1"></i>Tanya Theorycrafter AI / Export
           </button>
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
         </div>
@@ -576,41 +631,358 @@
 </div>
 
 {{-- =========================================================================
-     MODAL 3: EXPORT PROMPT UNTUK GEMINI AI
+     MODAL 3: ASISTEN TANYA-JAWAB AI & EXPORT PROMPT GEMINI AI
      ========================================================================= --}}
 <div class="modal fade" id="modalGeminiExport" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content genshin-panel-card border-gold-glow">
-      <div class="modal-header border-bottom-genshin">
-        <h5 class="modal-title text-gold font-display" style="font-size: 1.15rem;">
-          <i class="bi bi-cpu-fill text-warning me-2"></i>Export Prompt Theorycrafter untuk Gemini AI
-        </h5>
+      <div class="modal-header border-bottom-genshin py-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 me-2">
+          <div>
+            <h5 class="modal-title text-gold font-display mb-0" style="font-size: 1.15rem;">
+              <i class="bi bi-robot text-warning me-2"></i>Theorycrafter AI Assistant —
+              <span class="text-white" id="geminiModalPartyName">Analisis Tim</span>
+            </h5>
+            <div class="small text-muted" style="font-size: 0.74rem;">
+              Diskusi interaktif berbasis data pengujian aktual atau ekspor prompt Markdown/JSON.
+            </div>
+          </div>
+
+          {{-- Tombol Switch Model AI (Flash vs Pro) --}}
+          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="geminiModelSwitcher">
+            <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
+              <i class="bi bi-cpu me-1"></i>Model AI:
+            </span>
+            <button type="button" class="btn btn-sm btn-gemini-model active" data-model="flash" id="btnSwitchModelFlash" title="Respons Super Cepat (1-2 detik) • Kuota Free Tier: 1.500 req/hari">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+            </button>
+            <button type="button" class="btn btn-sm btn-gemini-model" data-model="pro" id="btnSwitchModelPro" title="Penalaran Teori & Kalkulasi Mendalam • Kuota Free Tier: 50 req/hari">
+              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+            </button>
+          </div>
+        </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
-      <div class="modal-body p-3 p-md-4">
-        <p class="small text-muted mb-3">
-          Prompt Markdown di bawah ini telah dirancang khusus dengan persona <strong>Theorycrafter Profesional</strong> dan memuat seluruh data numerik pengujian tim Anda. Anda dapat langsung menyalinnya untuk ditanyakan ke Google Gemini / Claude / ChatGPT.
-        </p>
+      <div class="modal-body p-3 p-md-4" style="background: #0d101a;">
+        {{-- Top Control Bar: Pilih Hasil Uji & Navigasi Tab --}}
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 mb-3 rounded" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1);">
+          <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1" style="max-width: 560px;">
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-clock-history text-warning"></i>
+              <span class="small text-white fw-bold text-nowrap">Acuan Uji:</span>
+              <span class="badge bg-dark border border-secondary text-gold" id="exportGeminiHistoryCountBadge">1 Uji</span>
+            </div>
+            <div class="flex-grow-1">
+              <select id="selectGeminiBenchmarkHistory" class="form-select form-select-sm genshin-select py-1">
+                <!-- Opsi riwayat benchmark diisi dinamis via JS -->
+              </select>
+            </div>
+          </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-          <button type="button" class="btn btn-genshin btn-genshin-sm" id="btnCopyPromptToClipboard">
-            <i class="bi bi-clipboard-check me-1"></i>Salin Prompt ke Clipboard
-          </button>
-          <a href="#" class="btn btn-sm btn-outline-info" id="btnDownloadMdLink">
-            <i class="bi bi-filetype-md me-1"></i>Download .md
-          </a>
-          <a href="#" class="btn btn-sm btn-outline-secondary" id="btnDownloadJsonLink">
-            <i class="bi bi-filetype-json me-1"></i>Download .json
-          </a>
+          {{-- Sub-nav Tabs: Live Chat vs Export Prompt --}}
+          <ul class="nav nav-pills gap-1" id="geminiModalTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active py-1 px-3 small fw-bold" id="tabBtnGeminiChat" data-bs-toggle="pill" data-bs-target="#paneGeminiChat" type="button" role="tab">
+                <i class="bi bi-chat-dots-fill me-1"></i>Asisten Tanya-Jawab AI
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link py-1 px-3 small fw-bold" id="tabBtnGeminiPrompt" data-bs-toggle="pill" data-bs-target="#paneGeminiPrompt" type="button" role="tab">
+                <i class="bi bi-file-earmark-code me-1"></i>Export Prompt (.md / .json)
+              </button>
+            </li>
+          </ul>
         </div>
 
-        <div class="position-relative">
-          <textarea id="geminiPromptTextarea" class="form-control genshin-input" rows="14" style="font-family: monospace; font-size: 0.82rem;" readonly></textarea>
+        <div class="tab-content">
+          {{-- TAB 1: ASISTEN TANYA-JAWAB INTERAKTIF --}}
+          <div class="tab-pane fade show active" id="paneGeminiChat" role="tabpanel">
+            {{-- Quick Prompt Chips --}}
+            <div class="mb-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="small text-muted" style="font-size: 0.72rem;">
+                  <i class="bi bi-magic text-warning me-1"></i>Pertanyaan Cepat (Klik untuk langsung bertanya):
+                </span>
+                <span class="badge bg-dark border border-secondary text-warning" style="font-size: 0.68rem;" id="activeModelIndicatorBadge">
+                  ⚡ Mode Aktif: Gemini 2.5 Flash (Cepat & Hemat Kuota)
+                </span>
+              </div>
+              <div class="d-flex flex-wrap gap-1" id="geminiQuickPrompts">
+                <button type="button" class="quick-prompt-chip" data-prompt="Berikan evaluasi lengkap performa tim ini berdasarkan data pengujian. Apa keunggulan utama dan di mana letak kelemahan terbesarnya?">
+                  📊 Evaluasi Lengkap Tim
+                </button>
+                <button type="button" class="quick-prompt-chip" data-prompt="Perhatikan tabel rotasi pengujian ini. Mengapa ada rotasi yang waktunya melambat atau DPS-nya berfluktuasi? Berapa kebutuhan ER% ideal tiap karakter?">
+                  🔄 Analisis Rotasi & ER%
+                </button>
+                <button type="button" class="quick-prompt-chip" data-prompt="Audit snapshot stat ke-4 karakter di tim ini (CRIT Rate, CRIT DMG, ATK, HP, EM, ER%). Siapa karakter yang paling prioritas diperbaiki build-nya?">
+                  🧬 Audit Stat 4 Karakter
+                </button>
+                <button type="button" class="quick-prompt-chip" data-prompt="Tuliskan urutan kombo rotasi (Skill E, Burst Q, Normal/Charged Attack) langkah demi langkah yang paling optimal untuk tim ini agar DPS maksimal.">
+                  ⚔️ Urutan Kombo Optimal
+                </button>
+                <button type="button" class="quick-prompt-chip" data-prompt="Apa rekomendasi set artefak, main stat, dan senjata terbaik (termasuk opsi F2P Bintang 4) untuk ke-4 karakter dalam tim ini?">
+                  🛡️ Rekomendasi Senjata & Artefak
+                </button>
+              </div>
+            </div>
+
+            {{-- Chat Box Stream --}}
+            <div class="gemini-chat-box rounded p-3 mb-3" id="geminiChatBox">
+              <div id="geminiChatWelcomeCard" class="chat-welcome-banner p-3 rounded mb-3">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="chat-ai-avatar-badge">
+                    <i class="bi bi-robot"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-1">
+                      <strong class="text-gold" style="font-size: 0.9rem;">Halo Traveler! Saya Theorycrafter AI Assistant.</strong>
+                      <span class="badge bg-gold text-dark fw-bold" style="font-size: 0.68rem;" id="chatWelcomeBenchBadge">Data Uji Siap</span>
+                    </div>
+                    <p class="small text-light mb-2" style="opacity: 0.88; line-height: 1.45;">
+                      Saya sudah memuat seluruh data numerik hasil pengujian tim ini (metrik DPS, durasi tiap rotasi, distribusi damage, hingga snapshot stat ke-4 karakter). Silakan pilih salah satu <strong>Pertanyaan Cepat</strong> di atas atau ketik pertanyaan spesifik Anda di bawah!
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 small" id="chatWelcomeMetricsPills"></div>
+                  </div>
+                </div>
+              </div>
+
+              {{-- Dynamic Messages Container --}}
+              <div id="geminiChatMessagesList" class="d-flex flex-column gap-3"></div>
+
+              {{-- Typing Indicator --}}
+              <div id="geminiChatTypingIndicator" class="d-none mt-3">
+                <div class="d-flex align-items-center gap-2 p-2 px-3 rounded" style="background: rgba(200, 170, 110, 0.08); border: 1px solid rgba(200, 170, 110, 0.25); width: fit-content;">
+                  <div class="spinner-grow spinner-grow-sm text-warning" role="status"></div>
+                  <span class="small text-gold fw-bold" id="geminiTypingText">Gemini Flash sedang menganalisis data tim...</span>
+                </div>
+              </div>
+            </div>
+
+            {{-- Chat Input Area --}}
+            <div class="d-flex align-items-end gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm py-2 px-2" id="btnClearGeminiChat" title="Bersihkan riwayat percakapan ini">
+                <i class="bi bi-trash3"></i>
+              </button>
+              <div class="flex-grow-1">
+                <textarea id="geminiChatInput" class="form-control genshin-input" rows="2" placeholder="Ketik pertanyaan seputar rotasi, stat karakter, atau penggantian anggota tim... (Tekan Enter untuk kirim, Shift+Enter baris baru)" style="resize: none; font-size: 0.85rem;"></textarea>
+              </div>
+              <button type="button" class="btn btn-genshin py-2 px-3 d-flex align-items-center gap-1" id="btnSendGeminiChat" style="height: 54px;">
+                <i class="bi bi-send-fill"></i>
+                <span class="d-none d-sm-inline fw-bold">Kirim</span>
+              </button>
+            </div>
+          </div>
+
+          {{-- TAB 2: EXPORT PROMPT MANUAL (.MD / .JSON) --}}
+          <div class="tab-pane fade" id="paneGeminiPrompt" role="tabpanel">
+            <p class="small text-muted mb-2">
+              Prompt Markdown di bawah ini memuat seluruh data numerik pengujian tim Anda jika ingin disalin manual ke platform AI eksternal atau disimpan sebagai dokumen.
+            </p>
+
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+              <button type="button" class="btn btn-genshin btn-genshin-sm" id="btnCopyPromptToClipboard">
+                <i class="bi bi-clipboard-check me-1"></i>Salin Prompt ke Clipboard
+              </button>
+              <a href="#" class="btn btn-sm btn-outline-info" id="btnDownloadMdLink">
+                <i class="bi bi-filetype-md me-1"></i>Download .md
+              </a>
+              <a href="#" class="btn btn-sm btn-outline-secondary" id="btnDownloadJsonLink">
+                <i class="bi bi-filetype-json me-1"></i>Download .json
+              </a>
+            </div>
+
+            <div class="position-relative">
+              <textarea id="geminiPromptTextarea" class="form-control genshin-input" rows="13" style="font-family: monospace; font-size: 0.82rem;" readonly></textarea>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="modal-footer border-top-genshin">
+      <div class="modal-footer border-top-genshin py-2 d-flex justify-content-between align-items-center">
+        <span class="small text-muted" style="font-size: 0.72rem;">
+          <i class="bi bi-shield-check text-success me-1"></i>Powered by Google Gemini API • Mendukung multi-turn percakapan kontekstual
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- =========================================================================
+     MODAL 4: KOMPARASI HASIL PENGUJIAN BENCHMARK (A/B TESTING & AI ANALYSIS)
+     ========================================================================= --}}
+<div class="modal fade" id="modalCompareBenchmarks" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content genshin-panel-card border-gold-glow">
+      <div class="modal-header border-bottom-genshin py-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 me-2">
+          <div>
+            <h5 class="modal-title text-gold font-display mb-0" style="font-size: 1.15rem;">
+              <i class="bi bi-arrow-left-right text-warning me-2"></i>Komparasi Hasil Pengujian —
+              <span class="text-white" id="compareModalPartyName">Party</span>
+            </h5>
+            <div class="small text-muted" style="font-size: 0.74rem;">
+              Bandingkan selisih DPS, waktu rotasi, perubahan stat karakter, dan analisis penyebabnya bersama Gemini AI.
+            </div>
+          </div>
+
+          {{-- Tombol Switch Model AI di Modal Komparasi --}}
+          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="compareModelSwitcher">
+            <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
+              <i class="bi bi-cpu me-1"></i>Model AI:
+            </span>
+            <button type="button" class="btn btn-sm btn-gemini-model active" data-model="flash" title="Respons Super Cepat (1-2 detik) • Kuota Free Tier: 1.500 req/hari">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+            </button>
+            <button type="button" class="btn btn-sm btn-gemini-model" data-model="pro" title="Penalaran Teori & Kalkulasi Mendalam • Kuota Free Tier: 50 req/hari">
+              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-3 p-md-4" style="background: #0d101a;">
+        {{-- Selector Uji A vs Uji B --}}
+        <div class="p-3 mb-3 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(200, 170, 110, 0.25);">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-muted fw-bold mb-1">
+                <span class="badge bg-secondary me-1">UJI A</span>Acuan / Sebelumnya
+              </label>
+              <select id="selectCompareBenchA" class="form-select form-select-sm genshin-select"></select>
+            </div>
+
+            <div class="col-12 col-md-1 text-center">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="btnSwapCompareBench" title="Tukar Posisi Uji A dan Uji B">
+                <i class="bi bi-arrow-left-right text-warning"></i>
+              </button>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-gold fw-bold mb-1">
+                <span class="badge bg-gold text-dark me-1">UJI B</span>Pembanding / Terbaru
+              </label>
+              <select id="selectCompareBenchB" class="form-select form-select-sm genshin-select"></select>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <button type="button" class="btn btn-genshin btn-sm w-100 py-2 fw-bold" id="btnRunAiComparison">
+                <i class="bi bi-stars me-1"></i>Analisis Komparasi AI
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {{-- 4 Big Delta Metric Cards --}}
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3">
+            <div class="bench-top-metric-card text-center p-2 rounded h-100">
+              <div class="metric-label">Perubahan DPS</div>
+              <div class="small text-muted mt-1" id="compDpsValues" style="font-family: monospace;">0 ➔ 0</div>
+              <div class="mt-1" id="compDpsDeltaBadge"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="bench-top-metric-card text-center p-2 rounded h-100">
+              <div class="metric-label">Perubahan Total DMG</div>
+              <div class="small text-muted mt-1" id="compDmgValues" style="font-family: monospace;">0 ➔ 0</div>
+              <div class="mt-1" id="compDmgDeltaBadge"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="bench-top-metric-card text-center p-2 rounded h-100">
+              <div class="metric-label">Hit Terkuat (Nuke)</div>
+              <div class="small text-muted mt-1" id="compMaxHitValues" style="font-family: monospace;">0 ➔ 0</div>
+              <div class="mt-1" id="compMaxHitDeltaBadge"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="bench-top-metric-card text-center p-2 rounded h-100">
+              <div class="metric-label">Rata-rata Durasi Rotasi</div>
+              <div class="small text-muted mt-1" id="compRotDurValues" style="font-family: monospace;">0 d ➔ 0 d</div>
+              <div class="mt-1" id="compRotDurDeltaBadge"></div>
+            </div>
+          </div>
+        </div>
+
+        {{-- Tabel Perbandingan Stat & Kontribusi Damage 4 Karakter --}}
+        <div class="mb-3 p-3 rounded" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <div class="small text-gold fw-bold">
+              <i class="bi bi-table me-1"></i>Perbandingan Stat & Kontribusi Damage Karakter (Uji A ➔ Uji B)
+            </div>
+            <span class="small text-muted" style="font-size: 0.72rem;">
+              Hijau = Meningkat • Merah = Menurun
+            </span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-sm table-bordered align-middle small mb-0">
+              <thead>
+                <tr class="text-gold text-center" style="font-size: 0.75rem; background: #141824;">
+                  <th class="text-start">Karakter</th>
+                  <th>Porsi DMG (%)</th>
+                  <th>Total ATK</th>
+                  <th>HP</th>
+                  <th>CRIT Rate</th>
+                  <th>CRIT DMG</th>
+                  <th>ER%</th>
+                  <th>EM</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyCompareCharacters"></tbody>
+            </table>
+          </div>
+        </div>
+
+        {{-- Area Laporan Analisis Komparasi Gemini AI --}}
+        <div class="p-3 rounded" style="background: #111522; border: 1px solid rgba(200, 170, 110, 0.35);">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 pb-2 border-bottom border-secondary">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-robot text-warning fs-5"></i>
+              <strong class="text-gold">Laporan Analisis Komparasi Gemini AI</strong>
+              <span class="badge bg-dark border border-secondary text-warning" id="compareAiModelBadge" style="font-size: 0.68rem;">
+                Siap Menganalisis
+              </span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-warning d-none" id="btnCopyCompareAiReport">
+              <i class="bi bi-clipboard-check me-1"></i>Salin Laporan
+            </button>
+          </div>
+
+          {{-- Empty / Prompt State --}}
+          <div id="compareAiEmptyState" class="text-center py-4">
+            <i class="bi bi-stars text-warning" style="font-size: 2rem; opacity: 0.8;"></i>
+            <h6 class="text-light mt-2 mb-1">Ingin Tahu Mengapa Hasil Uji A & Uji B Berbeda?</h6>
+            <p class="small text-muted mx-auto mb-3" style="max-width: 540px;">
+              Tekan tombol <strong>"Analisis Komparasi AI"</strong> di atas. Gemini AI akan membedah perubahan stat karakter, konsistensi durasi rotasi, dan menentukan setup mana yang paling optimal untuk tim Anda.
+            </p>
+            <button type="button" class="btn btn-genshin btn-sm px-4" id="btnTriggerCompareAiEmpty">
+              <i class="bi bi-magic me-1"></i>Mulai Analisis Komparasi AI Sekarang
+            </button>
+          </div>
+
+          {{-- Loading State --}}
+          <div id="compareAiLoadingState" class="text-center py-4 d-none">
+            <div class="spinner-border text-warning mb-2" role="status"></div>
+            <div class="text-gold fw-bold small" id="compareAiLoadingText">
+              Gemini AI sedang membandingkan data kedua pengujian...
+            </div>
+            <div class="small text-muted mt-1" style="font-size: 0.72rem;">
+              Membedah delta DPS, rasio CRIT, Energy Recharge, dan durasi tiap rotasi...
+            </div>
+          </div>
+
+          {{-- Rendered AI Report Content --}}
+          <div id="compareAiResultContent" class="chat-bubble d-none" style="background: transparent; border: none; padding: 0;"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top-genshin py-2 d-flex justify-content-between align-items-center">
+        <span class="small text-muted" style="font-size: 0.72rem;">
+          <i class="bi bi-lightbulb text-warning me-1"></i>Tips: Gunakan Uji A untuk setup lama dan Uji B untuk setup baru agar persentase peningkatan positif (+).
+        </span>
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
@@ -985,21 +1357,45 @@
   .char-picker-card.is-selected-in-party {
     border-color: #10b981 !important;
     background: rgba(16, 185, 129, 0.08);
-    opacity: 0.75;
   }
 
-  .char-picker-card.is-selected-in-party::after {
-    content: "DIPILIH";
+  .char-slot-tag {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(16, 185, 129, 0.9);
+    background: rgba(16, 185, 129, 0.95);
     color: #000;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 0.05em;
     padding: 2px 0;
+    text-transform: uppercase;
+    z-index: 2;
+  }
+
+  .btn-modal-slot-tab {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-modal-slot-tab:hover {
+    color: #fff;
+    border-color: var(--color-gold);
+  }
+
+  .btn-modal-slot-tab.active {
+    background: var(--color-gold);
+    color: #0b0e17;
+    border-color: var(--color-gold);
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(200, 170, 110, 0.4);
   }
 
   .char-avatar-ring {
@@ -1221,6 +1617,179 @@
   .bench-char-stat-card .stat-row:last-child {
     border-bottom: none;
   }
+
+  /* ─── Gemini AI Assistant Chat & Model Switcher ─── */
+  .btn-gemini-model {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-gemini-model:hover {
+    color: #fff;
+    border-color: var(--color-gold);
+  }
+
+  .btn-gemini-model.active[data-model="flash"] {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #0b0e17;
+    border-color: #fbbf24;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+  }
+
+  .btn-gemini-model.active[data-model="flash"] i {
+    color: #0b0e17 !important;
+  }
+
+  .btn-gemini-model.active[data-model="pro"] {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #fff;
+    border-color: #60a5fa;
+    font-weight: 800;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+  }
+
+  .btn-gemini-model.active[data-model="pro"] i {
+    color: #fde047 !important;
+  }
+
+  #geminiModalTabs .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  #geminiModalTabs .nav-link.active {
+    color: #0b0e17;
+    background: var(--color-gold);
+    border-color: var(--color-gold);
+  }
+
+  .quick-prompt-chip {
+    background: rgba(200, 170, 110, 0.08);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+    color: #e5e7eb;
+    font-size: 0.73rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .quick-prompt-chip:hover {
+    background: rgba(200, 170, 110, 0.22);
+    border-color: var(--color-gold-bright);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .gemini-chat-box {
+    background: #090b12;
+    border: 1px solid rgba(200, 170, 110, 0.22);
+    height: 390px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .chat-welcome-banner {
+    background: linear-gradient(135deg, rgba(200, 170, 110, 0.12) 0%, rgba(15, 18, 28, 0.9) 100%);
+    border: 1px solid rgba(200, 170, 110, 0.3);
+  }
+
+  .chat-ai-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c8aa6e, #92733c);
+    color: #0b0e17;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px rgba(200, 170, 110, 0.35);
+  }
+
+  .chat-msg-row {
+    display: flex;
+    flex-direction: column;
+    max-width: 92%;
+  }
+
+  .chat-msg-row.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  .chat-msg-row.ai {
+    align-self: flex-start;
+    align-items: flex-start;
+    max-width: 96%;
+  }
+
+  .chat-bubble {
+    padding: 0.7rem 0.95rem;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+
+  .chat-msg-row.user .chat-bubble {
+    background: linear-gradient(135deg, rgba(200, 170, 110, 0.25) 0%, rgba(200, 170, 110, 0.12) 100%);
+    border: 1px solid rgba(200, 170, 110, 0.45);
+    color: #fef3c7;
+    border-bottom-right-radius: 3px;
+  }
+
+  .chat-msg-row.ai .chat-bubble {
+    background: #131724;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e5e7eb;
+    border-top-left-radius: 3px;
+    width: 100%;
+  }
+
+  .chat-bubble h1, .chat-bubble h2, .chat-bubble h3, .chat-bubble h4 {
+    color: var(--color-gold-bright);
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 0.65rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .chat-bubble h1:first-child, .chat-bubble h2:first-child, .chat-bubble h3:first-child {
+    margin-top: 0;
+  }
+
+  .chat-bubble ul, .chat-bubble ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .chat-bubble li {
+    margin-bottom: 0.2rem;
+  }
+
+  .chat-bubble strong {
+    color: #fde68a;
+  }
+
+  .chat-bubble code {
+    background: rgba(255, 255, 255, 0.08);
+    color: #93c5fd;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+  }
 </style>
 @endpush
 
@@ -1363,6 +1932,21 @@
         if (e.target.closest('.btn-slot-remove')) return;
         const index = parseInt(this.getAttribute('data-slot'));
         setActiveSlot(index);
+        openCharacterPickerModal(index);
+      });
+    });
+
+    const btnOpenPicker = document.getElementById('btnOpenCharPicker');
+    if (btnOpenPicker) {
+      btnOpenPicker.addEventListener('click', function () {
+        openCharacterPickerModal(partyState.activeSlotIndex);
+      });
+    }
+
+    document.querySelectorAll('.btn-modal-slot-tab').forEach(tab => {
+      tab.addEventListener('click', function () {
+        const slotIdx = parseInt(this.getAttribute('data-slot'));
+        setActiveSlot(slotIdx);
       });
     });
 
@@ -1431,23 +2015,53 @@
     document.getElementById('btnEmptyStateCreate').addEventListener('click', function () {
       document.getElementById('partyBuilderSection').scrollIntoView({ behavior: 'smooth' });
       setActiveSlot(0);
+      openCharacterPickerModal(0);
     });
   }
 
-  // ─── SLOT MANAGEMENT ───────────────────────────────────
+  // ─── SLOT & MODAL PICKER MANAGEMENT ────────────────────
   function setActiveSlot(index) {
     partyState.activeSlotIndex = index;
     document.querySelectorAll('.party-slot-card').forEach((el, i) => {
       el.classList.toggle('slot-active', i === index);
     });
-    document.getElementById('activeSlotNotice').textContent = `Slot ${index + 1}`;
+    const notice = document.getElementById('activeSlotNotice');
+    if (notice) notice.textContent = `Slot ${index + 1}`;
+    updateModalSlotSwitcher();
+  }
+
+  function updateModalSlotSwitcher() {
+    const badge = document.getElementById('modalPickerActiveSlotBadge');
+    if (badge) badge.textContent = `Slot ${partyState.activeSlotIndex + 1}`;
+
+    document.querySelectorAll('.btn-modal-slot-tab').forEach((tab, i) => {
+      tab.classList.toggle('active', i === partyState.activeSlotIndex);
+    });
+  }
+
+  function openCharacterPickerModal(slotIndex) {
+    if (slotIndex !== undefined && slotIndex !== null) {
+      setActiveSlot(slotIndex);
+    } else {
+      updateModalSlotSwitcher();
+    }
+    const modalEl = document.getElementById('modalCharacterPicker');
+    if (modalEl) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
   }
 
   function selectCharacter(char) {
     const existingIndex = partyState.slots.findIndex(s => s && s.id === char.id);
-    if (existingIndex !== -1) {
+    if (existingIndex !== -1 && existingIndex === partyState.activeSlotIndex) {
       removeCharacterFromSlot(existingIndex);
       return;
+    }
+
+    if (existingIndex !== -1) {
+      // Pindahkan dari slot lain ke slot aktif
+      partyState.slots[existingIndex] = null;
     }
 
     const targetSlot = partyState.activeSlotIndex;
@@ -1456,10 +2070,26 @@
     renderSlots();
     renderResonances();
     renderCharacterCatalog();
+    updateModalSlotSwitcher();
 
     const nextEmptyIndex = partyState.slots.findIndex(s => s === null);
     if (nextEmptyIndex !== -1) {
       setActiveSlot(nextEmptyIndex);
+    } else {
+      // 4 slot sudah lengkap! Tutup modal
+      const modalEl = document.getElementById('modalCharacterPicker');
+      if (modalEl) {
+        const modalInst = bootstrap.Modal.getInstance(modalEl);
+        if (modalInst) modalInst.hide();
+      }
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Party lengkap (4 Karakter)!',
+        showConfirmButton: false,
+        timer: 1600
+      });
     }
   }
 
@@ -1673,15 +2303,21 @@
     emptyState.classList.add('d-none');
 
     filtered.forEach(char => {
-      const isSelected = selectedIds.has(char.id);
+      const slotIdx = partyState.slots.findIndex(s => s && s.id === char.id);
+      const isSelected = slotIdx !== -1;
       const elemColor = char.element_color || (ELEMENT_CONFIG[char.element]?.color ?? '#c8aa6e');
       const elemIcon = ELEMENT_CONFIG[char.element]?.icon ?? 'bi-circle';
 
       const col = document.createElement('div');
       col.className = 'col';
 
+      const slotTagHtml = isSelected ? `<span class="char-slot-tag">Slot ${slotIdx + 1}</span>` : '';
+      const tooltip = isSelected
+        ? `${char.name} (${char.element} - ${char.weapon_type}) • Terpilih di Slot ${slotIdx + 1}`
+        : `${char.name} (${char.element} - ${char.weapon_type})`;
+
       col.innerHTML = `
-        <div class="char-picker-card ${isSelected ? 'is-selected-in-party' : ''}" style="--elem-color: ${elemColor};" title="${char.name} (${char.element} - ${char.weapon_type})">
+        <div class="char-picker-card ${isSelected ? 'is-selected-in-party' : ''}" style="--elem-color: ${elemColor};" title="${tooltip}">
           <div class="char-avatar-ring">
             <img src="${char.icon_url || ''}" alt="${char.name}" class="char-avatar-img" loading="lazy">
           </div>
@@ -1692,6 +2328,7 @@
             </span>
             <span class="text-warning" style="font-size: 0.65rem;">★${char.rarity || 5}</span>
           </div>
+          ${slotTagHtml}
         </div>
       `;
 
@@ -1761,9 +2398,12 @@
               <span class="badge" style="background-color: ${lb.tier_color}; color: #000; font-weight: 800; font-size: 0.72rem;">
                 Tier ${lb.tier}
               </span>
-              <span class="text-gold fw-bold" style="font-size: 0.88rem; font-family: monospace;">
-                <i class="bi bi-speedometer2 text-warning me-1"></i>${lb.formatted_dps} DPS
-              </span>
+              <div class="d-flex align-items-center">
+                ${party.benchmarks_count > 1 ? `<span class="badge bg-dark border border-secondary text-info me-2" style="font-size: 0.65rem;" title="${party.benchmarks_count} riwayat pengujian tersimpan"><i class="bi bi-clock-history me-1"></i>${party.benchmarks_count}x Uji</span>` : ''}
+                <span class="text-gold fw-bold" style="font-size: 0.88rem; font-family: monospace;">
+                  <i class="bi bi-speedometer2 text-warning me-1"></i>${lb.formatted_dps} DPS
+                </span>
+              </div>
             </div>
             <div class="d-flex align-items-center justify-content-between text-muted small" style="font-size: 0.7rem;">
               <span>Total: ${lb.formatted_damage}</span>
@@ -1776,12 +2416,19 @@
       // Actions row
       let benchActions = '';
       if (lb) {
+        const compareBtnHtml = party.benchmarks_count >= 2
+          ? `<button type="button" class="btn btn-sm btn-outline-info btn-compare-bench" data-party-id="${party.id}" title="Bandingkan 2 Hasil Pengujian (A/B Testing)">
+               <i class="bi bi-arrow-left-right me-1"></i>Komparasi
+             </button>`
+          : '';
+
         benchActions = `
           <button type="button" class="btn btn-sm btn-outline-success btn-view-bench" data-id="${lb.id}" title="Lihat Laporan Lengkap">
             <i class="bi bi-bar-chart-line-fill me-1"></i>Hasil Uji (${party.benchmarks_count})
           </button>
-          <button type="button" class="btn btn-sm btn-outline-warning btn-export-gemini" data-id="${lb.id}" title="Export Prompt untuk Gemini AI">
-            <i class="bi bi-cpu-fill me-1"></i>Gemini AI
+          ${compareBtnHtml}
+          <button type="button" class="btn btn-sm btn-outline-warning btn-export-gemini" data-id="${lb.id}" title="Tanya Asisten Theorycrafter AI & Export Prompt">
+            <i class="bi bi-robot me-1"></i>Tanya AI
           </button>
           <button type="button" class="btn btn-sm btn-outline-secondary btn-open-scan" data-party-id="${party.id}" title="Tambah / Scan Uji Baru">
             <i class="bi bi-camera-fill"></i>
@@ -1858,6 +2505,12 @@
         });
       });
 
+      col.querySelectorAll('.btn-compare-bench').forEach(btn => {
+        btn.addEventListener('click', function () {
+          openCompareBenchmarksModal(party);
+        });
+      });
+
       col.querySelectorAll('.btn-export-gemini').forEach(btn => {
         btn.addEventListener('click', function () {
           const bId = this.getAttribute('data-id');
@@ -1885,6 +2538,7 @@
     renderSlots();
     renderResonances();
     renderCharacterCatalog();
+    updateModalSlotSwitcher();
     document.getElementById('partyBuilderSection').scrollIntoView({ behavior: 'smooth' });
 
     Swal.fire({
@@ -2154,7 +2808,89 @@
       });
     });
 
+    // Benchmark history dropdown change
+    const selectBenchHistory = document.getElementById('selectBenchmarkHistory');
+    if (selectBenchHistory) {
+      selectBenchHistory.addEventListener('change', function () {
+        const bId = this.value;
+        if (bId && (!activeBenchmark || activeBenchmark.id != bId)) {
+          loadBenchmarkIntoView(bId);
+        }
+      });
+    }
+
+    // Gemini benchmark history dropdown change
+    const selectGeminiHistory = document.getElementById('selectGeminiBenchmarkHistory');
+    if (selectGeminiHistory) {
+      selectGeminiHistory.addEventListener('change', function () {
+        const bId = this.value;
+        if (bId) {
+          loadGeminiPromptForBenchmark(bId);
+        }
+      });
+    }
+
+    // Gemini Model Switcher (Flash vs Pro)
+    document.querySelectorAll('.btn-gemini-model').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const chosenModel = this.getAttribute('data-model') || 'flash';
+        setGeminiActiveModel(chosenModel);
+      });
+    });
+
+    // Quick Prompt Chips
+    document.querySelectorAll('.quick-prompt-chip').forEach(chip => {
+      chip.addEventListener('click', function () {
+        const promptText = this.getAttribute('data-prompt');
+        if (promptText) {
+          // Pastikan tab chat aktif
+          const chatTabBtn = document.getElementById('tabBtnGeminiChat');
+          if (chatTabBtn) bootstrap.Tab.getOrCreateInstance(chatTabBtn).show();
+          sendGeminiChatMessage(promptText);
+        }
+      });
+    });
+
+    // Send Chat Button & Enter Key
+    const btnSendChat = document.getElementById('btnSendGeminiChat');
+    if (btnSendChat) {
+      btnSendChat.addEventListener('click', () => sendGeminiChatMessage());
+    }
+
+    const chatInput = document.getElementById('geminiChatInput');
+    if (chatInput) {
+      chatInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendGeminiChatMessage();
+        }
+      });
+    }
+
+    // Clear Chat Button
+    const btnClearChat = document.getElementById('btnClearGeminiChat');
+    if (btnClearChat) {
+      btnClearChat.addEventListener('click', function () {
+        const bId = geminiChatState.activeBenchmarkId;
+        if (!bId) return;
+        geminiChatState.sessionsByBenchmark[bId] = [];
+        renderGeminiChatMessages();
+      });
+    }
+
     // View Modal actions
+    const btnCompareFromView = document.getElementById('btnCompareFromView');
+    if (btnCompareFromView) {
+      btnCompareFromView.addEventListener('click', () => {
+        if (activeBenchmark && activeBenchmark.saved_party_id) {
+          const foundParty = window.savedParties.find(p => p.id == activeBenchmark.saved_party_id);
+          const modalViewInst = bootstrap.Modal.getInstance(document.getElementById('modalViewBenchmark'));
+          if (modalViewInst) modalViewInst.hide();
+          openCompareBenchmarksModal(foundParty, activeBenchmark.id);
+        }
+      });
+    }
+
     document.getElementById('btnExportGeminiFromView').addEventListener('click', () => {
       if (activeBenchmark) {
         bootstrap.Modal.getInstance(document.getElementById('modalViewBenchmark')).hide();
@@ -2167,6 +2903,51 @@
         confirmDeleteBenchmark(activeBenchmark.id);
       }
     });
+
+    // Compare Modal events
+    const selCompA = document.getElementById('selectCompareBenchA');
+    const selCompB = document.getElementById('selectCompareBenchB');
+    if (selCompA && selCompB) {
+      selCompA.addEventListener('change', () => fetchComparisonData(false));
+      selCompB.addEventListener('change', () => fetchComparisonData(false));
+    }
+
+    const btnSwapComp = document.getElementById('btnSwapCompareBench');
+    if (btnSwapComp && selCompA && selCompB) {
+      btnSwapComp.addEventListener('click', () => {
+        const tmp = selCompA.value;
+        selCompA.value = selCompB.value;
+        selCompB.value = tmp;
+        fetchComparisonData(false);
+      });
+    }
+
+    const btnRunAiComp = document.getElementById('btnRunAiComparison');
+    if (btnRunAiComp) {
+      btnRunAiComp.addEventListener('click', () => fetchComparisonData(true));
+    }
+
+    const btnTriggerCompEmpty = document.getElementById('btnTriggerCompareAiEmpty');
+    if (btnTriggerCompEmpty) {
+      btnTriggerCompEmpty.addEventListener('click', () => fetchComparisonData(true));
+    }
+
+    const btnCopyCompReport = document.getElementById('btnCopyCompareAiReport');
+    if (btnCopyCompReport) {
+      btnCopyCompReport.addEventListener('click', () => {
+        if (!compareState.lastRawAiReport) return;
+        navigator.clipboard.writeText(compareState.lastRawAiReport).then(() => {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Laporan komparasi AI berhasil disalin!',
+            showConfirmButton: false,
+            timer: 1800
+          });
+        });
+      });
+    }
   }
 
   function openScanBenchmarkModal(party) {
@@ -2506,12 +3287,54 @@
     .then(data => {
       if (data.success && data.benchmark) {
         activeBenchmark = data.benchmark;
+        renderBenchmarkHistoryOptions(data.history || [data.benchmark], data.benchmark.id);
         renderViewBenchmarkDashboard(data.benchmark);
-        const modal = new bootstrap.Modal(document.getElementById('modalViewBenchmark'));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalViewBenchmark'));
         modal.show();
       }
     })
     .catch(err => console.error(err));
+  }
+
+  function loadBenchmarkIntoView(benchmarkId) {
+    fetch(`{{ url('party/benchmarks') }}/${benchmarkId}`, {
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.benchmark) {
+        activeBenchmark = data.benchmark;
+        renderBenchmarkHistoryOptions(data.history || [data.benchmark], data.benchmark.id);
+        renderViewBenchmarkDashboard(data.benchmark);
+      }
+    })
+    .catch(err => console.error(err));
+  }
+
+  function renderBenchmarkHistoryOptions(historyList, currentId) {
+    const select = document.getElementById('selectBenchmarkHistory');
+    const badge = document.getElementById('viewBenchHistoryCountBadge');
+    const btnCompare = document.getElementById('btnCompareFromView');
+    if (!select) return;
+
+    select.innerHTML = '';
+    const total = historyList.length;
+    if (badge) badge.textContent = `${total} Uji Tersimpan`;
+    if (btnCompare) {
+      btnCompare.classList.toggle('d-none', total < 2);
+    }
+
+    historyList.forEach((item, idx) => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      const order = total - idx;
+      const isLatest = idx === 0 ? ' [Terbaru]' : '';
+      opt.textContent = `Uji #${order} • ${item.created_at} (${item.formatted_dps} DPS | Tier ${item.tier})${isLatest}`;
+      if (parseInt(item.id) === parseInt(currentId)) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
   }
 
   function renderViewBenchmarkDashboard(b) {
@@ -2651,16 +3474,48 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('modalViewBenchmark')).hide();
             fetchSavedPartiesList();
-            Swal.fire('Terhapus', data.message || 'Benchmark berhasil dihapus.', 'success');
+            if (data.party && data.party.latest_benchmark) {
+              loadBenchmarkIntoView(data.party.latest_benchmark.id);
+              Swal.fire('Terhapus', data.message || 'Data benchmark berhasil dihapus.', 'success');
+            } else {
+              const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalViewBenchmark'));
+              if (modalInst) modalInst.hide();
+              Swal.fire('Terhapus', data.message || 'Semua hasil uji party ini telah dihapus.', 'success');
+            }
           }
         });
       }
     });
   }
 
-  // ─── GEMINI PROMPT EXPORT MODAL ────────────────────────
+  // ─── GEMINI AI ASSISTANT CHAT & PROMPT EXPORT MODAL ────
+  const geminiChatState = {
+    activeBenchmarkId: null,
+    partyName: 'Party',
+    model: 'flash', // 'flash' | 'pro'
+    isSending: false,
+    sessionsByBenchmark: {}
+  };
+
+  function setGeminiActiveModel(modelChoice) {
+    geminiChatState.model = (modelChoice === 'pro') ? 'pro' : 'flash';
+    document.querySelectorAll('.btn-gemini-model').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-model') === geminiChatState.model);
+    });
+
+    const indicator = document.getElementById('activeModelIndicatorBadge');
+    if (indicator) {
+      if (geminiChatState.model === 'pro') {
+        indicator.className = 'badge bg-dark border border-info text-info';
+        indicator.innerHTML = '🧠 Mode Aktif: Gemini Pro (Analisis & Kalkulasi Mendalam)';
+      } else {
+        indicator.className = 'badge bg-dark border border-secondary text-warning';
+        indicator.innerHTML = '⚡ Mode Aktif: Gemini 2.5 Flash (Cepat & Hemat Kuota)';
+      }
+    }
+  }
+
   function openGeminiExportModal(benchmarkId) {
     fetch(`{{ url('party/benchmarks') }}/${benchmarkId}/export-prompt`, {
       headers: { 'Accept': 'application/json' }
@@ -2668,15 +3523,632 @@
     .then(res => res.json())
     .then(data => {
       if (data.success && data.prompt) {
+        geminiChatState.activeBenchmarkId = parseInt(benchmarkId);
+        geminiChatState.partyName = data.party_name || 'Party Benchmark';
+
+        const titleEl = document.getElementById('geminiModalPartyName');
+        if (titleEl) titleEl.textContent = geminiChatState.partyName;
+
+        renderGeminiHistoryOptions(data.history || [], benchmarkId);
+        updateGeminiWelcomeCard(data.benchmark || {});
+        renderGeminiChatMessages();
+
         document.getElementById('geminiPromptTextarea').value = data.prompt;
         document.getElementById('btnDownloadMdLink').href = `{{ url('party/benchmarks') }}/${benchmarkId}/download-md`;
         document.getElementById('btnDownloadJsonLink').href = `{{ url('party/benchmarks') }}/${benchmarkId}/download-json`;
 
-        const modal = new bootstrap.Modal(document.getElementById('modalGeminiExport'));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalGeminiExport'));
         modal.show();
       }
     })
     .catch(err => console.error(err));
+  }
+
+  function loadGeminiPromptForBenchmark(benchmarkId) {
+    const textarea = document.getElementById('geminiPromptTextarea');
+    const originalText = textarea.value;
+    textarea.value = 'Memuat prompt hasil uji...';
+
+    fetch(`{{ url('party/benchmarks') }}/${benchmarkId}/export-prompt`, {
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.prompt) {
+        geminiChatState.activeBenchmarkId = parseInt(benchmarkId);
+        if (data.party_name) geminiChatState.partyName = data.party_name;
+
+        const titleEl = document.getElementById('geminiModalPartyName');
+        if (titleEl) titleEl.textContent = geminiChatState.partyName;
+
+        updateGeminiWelcomeCard(data.benchmark || {});
+        renderGeminiChatMessages();
+
+        textarea.value = data.prompt;
+        document.getElementById('btnDownloadMdLink').href = `{{ url('party/benchmarks') }}/${benchmarkId}/download-md`;
+        document.getElementById('btnDownloadJsonLink').href = `{{ url('party/benchmarks') }}/${benchmarkId}/download-json`;
+      } else {
+        textarea.value = originalText;
+        Swal.fire('Error', 'Gagal memuat prompt hasil uji.', 'error');
+      }
+    })
+    .catch(err => {
+      textarea.value = originalText;
+      console.error(err);
+    });
+  }
+
+  function updateGeminiWelcomeCard(bench) {
+    const badge = document.getElementById('chatWelcomeBenchBadge');
+    const pills = document.getElementById('chatWelcomeMetricsPills');
+    if (badge) {
+      badge.textContent = bench.preset_name || 'Spiral Abyss Lantai 12';
+    }
+    if (pills) {
+      pills.innerHTML = `
+        <span class="badge bg-dark border border-secondary text-gold">
+          <i class="bi bi-speedometer2 me-1"></i>DPS: ${bench.formatted_dps || '0'}
+        </span>
+        <span class="badge bg-dark border border-secondary text-warning">
+          Tier ${bench.tier || 'S'}
+        </span>
+        ${bench.created_at ? `<span class="badge bg-dark border border-secondary text-muted"><i class="bi bi-clock me-1"></i>${bench.created_at}</span>` : ''}
+      `;
+    }
+  }
+
+  function renderGeminiHistoryOptions(historyList, currentId) {
+    const select = document.getElementById('selectGeminiBenchmarkHistory');
+    const badge = document.getElementById('exportGeminiHistoryCountBadge');
+    if (!select) return;
+
+    select.innerHTML = '';
+    const total = historyList.length;
+    if (badge) badge.textContent = `${total} Uji`;
+
+    historyList.forEach((item, idx) => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      const order = total - idx;
+      const isLatest = idx === 0 ? ' [Terbaru]' : '';
+      opt.textContent = `Uji #${order} • ${item.created_at} (${item.formatted_dps} DPS | Tier ${item.tier})${isLatest}`;
+      if (parseInt(item.id) === parseInt(currentId)) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
+
+  function renderGeminiChatMessages() {
+    const listEl = document.getElementById('geminiChatMessagesList');
+    const chatBox = document.getElementById('geminiChatBox');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+    const bId = geminiChatState.activeBenchmarkId;
+    const session = (bId && geminiChatState.sessionsByBenchmark[bId]) ? geminiChatState.sessionsByBenchmark[bId] : [];
+
+    session.forEach((msg, idx) => {
+      const row = document.createElement('div');
+      row.className = `chat-msg-row ${msg.role === 'user' ? 'user' : 'ai'}`;
+
+      if (msg.role === 'user') {
+        row.innerHTML = `
+          <div class="d-flex align-items-center gap-1 mb-1 small text-muted" style="font-size: 0.7rem;">
+            <span>Anda</span>
+            <i class="bi bi-person-circle text-warning"></i>
+          </div>
+          <div class="chat-bubble">${escapeHtml(msg.content).replace(/\n/g, '<br>')}</div>
+        `;
+      } else {
+        const isPro = msg.modelUsed && msg.modelUsed.includes('pro');
+        const modelBadge = isPro
+          ? `<span class="badge bg-primary bg-opacity-25 border border-primary text-info" style="font-size: 0.63rem;"><i class="bi bi-stars me-1"></i>${escapeHtml(msg.modelUsed)}</span>`
+          : `<span class="badge bg-warning bg-opacity-10 border border-warning text-warning" style="font-size: 0.63rem;"><i class="bi bi-lightning-charge-fill me-1"></i>${escapeHtml(msg.modelUsed || 'gemini-2.5-flash')}</span>`;
+
+        const fallbackNotice = msg.fallbackUsed
+          ? `<span class="badge bg-secondary text-light ms-1" style="font-size: 0.62rem;" title="Beralih otomatis ke Flash karena kuota Free Tier Pro sedang penuh">Auto-Fallback Flash</span>`
+          : '';
+
+        row.innerHTML = `
+          <div class="d-flex align-items-center justify-content-between w-100 mb-1">
+            <div class="d-flex align-items-center gap-1 small" style="font-size: 0.72rem;">
+              <i class="bi bi-robot text-gold"></i>
+              <strong class="text-gold">Theorycrafter AI</strong>
+              ${modelBadge}
+              ${fallbackNotice}
+            </div>
+            <button type="button" class="btn btn-link btn-sm p-0 text-muted text-decoration-none btn-copy-chat-msg" data-msg-idx="${idx}" title="Salin jawaban ini" style="font-size: 0.72rem;">
+              <i class="bi bi-clipboard me-1"></i>Salin
+            </button>
+          </div>
+          <div class="chat-bubble">${formatChatMarkdown(msg.content)}</div>
+        `;
+
+        const copyBtn = row.querySelector('.btn-copy-chat-msg');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(msg.content).then(() => {
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Jawaban AI berhasil disalin!',
+                showConfirmButton: false,
+                timer: 1500
+              });
+            });
+          });
+        }
+      }
+
+      listEl.appendChild(row);
+    });
+
+    if (chatBox) {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  }
+
+  function sendGeminiChatMessage(customPrompt) {
+    if (geminiChatState.isSending) return;
+
+    const bId = geminiChatState.activeBenchmarkId;
+    if (!bId) {
+      Swal.fire('Info', 'Pilih hasil pengujian terlebih dahulu.', 'info');
+      return;
+    }
+
+    const inputEl = document.getElementById('geminiChatInput');
+    const messageText = (customPrompt !== undefined && customPrompt !== null)
+      ? customPrompt.trim()
+      : (inputEl ? inputEl.value.trim() : '');
+
+    if (!messageText) return;
+
+    if (!customPrompt && inputEl) {
+      inputEl.value = '';
+    }
+
+    if (!geminiChatState.sessionsByBenchmark[bId]) {
+      geminiChatState.sessionsByBenchmark[bId] = [];
+    }
+
+    const currentHistory = geminiChatState.sessionsByBenchmark[bId].map(item => ({
+      role: item.role,
+      content: item.content
+    }));
+
+    // Tambahkan pesan user ke UI langsung
+    geminiChatState.sessionsByBenchmark[bId].push({
+      role: 'user',
+      content: messageText
+    });
+    renderGeminiChatMessages();
+
+    // Tampilkan indikator loading
+    geminiChatState.isSending = true;
+    const sendBtn = document.getElementById('btnSendGeminiChat');
+    const typingEl = document.getElementById('geminiChatTypingIndicator');
+    const typingText = document.getElementById('geminiTypingText');
+    const chatBox = document.getElementById('geminiChatBox');
+
+    if (sendBtn) sendBtn.disabled = true;
+    if (typingText) {
+      typingText.textContent = geminiChatState.model === 'pro'
+        ? 'Gemini Pro sedang menyusun analisis & kalkulasi teori mendalam...'
+        : 'Gemini Flash sedang menganalisis data pengujian tim...';
+    }
+    if (typingEl) typingEl.classList.remove('d-none');
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+    fetch(`{{ url('party/benchmarks') }}/${bId}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        message: messageText,
+        history: currentHistory,
+        model: geminiChatState.model
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      geminiChatState.isSending = false;
+      if (sendBtn) sendBtn.disabled = false;
+      if (typingEl) typingEl.classList.add('d-none');
+
+      if (data.success && data.reply) {
+        geminiChatState.sessionsByBenchmark[bId].push({
+          role: 'model',
+          content: data.reply,
+          modelUsed: data.model_used || (geminiChatState.model === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash'),
+          fallbackUsed: !!data.fallback_used
+        });
+        renderGeminiChatMessages();
+      } else {
+        // Hapus pesan user terakhir jika gagal agar bisa dikirim ulang atau tampilkan pesan error
+        Swal.fire('Gagal Memproses Jawaban AI', data.message || 'Terjadi kendala saat menghubungi Gemini API.', 'error');
+      }
+    })
+    .catch(err => {
+      geminiChatState.isSending = false;
+      if (sendBtn) sendBtn.disabled = false;
+      if (typingEl) typingEl.classList.add('d-none');
+      console.error(err);
+      Swal.fire('Kesalahan Koneksi', 'Gagal menghubungi server aplikasi.', 'error');
+    });
+  }
+
+  function formatChatMarkdown(rawText) {
+    if (!rawText) return '';
+    let html = escapeHtml(rawText);
+
+    // Code blocks ```...```
+    html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, function (_, lang, code) {
+      return `<pre class="p-2 my-2 rounded bg-black border border-secondary text-info small" style="overflow-x:auto;"><code>${code.trim()}</code></pre>`;
+    });
+
+    // Inline code `...`
+    html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    // Markdown Tables
+    html = html.replace(/((?:^\|.*\|$\n?)+)/gm, function (tableBlock) {
+      const lines = tableBlock.trim().split('\n').filter(l => l.trim().startsWith('|'));
+      if (lines.length < 2) return tableBlock;
+      let tHtml = '<div class="table-responsive my-2"><table class="table table-dark table-sm table-bordered small mb-0">';
+      lines.forEach((line, idx) => {
+        if (/^\|[\s:-]+\|$/.test(line.replace(/\|/g, '|'))) {
+          if (/^[\s|:-]+$/.test(line)) return;
+        }
+        const cells = line.split('|').slice(1, -1);
+        if (cells.length === 0) return;
+        const tag = idx === 0 ? 'th' : 'td';
+        tHtml += '<tr>' + cells.map(c => `<${tag} class="${idx === 0 ? 'text-gold bg-dark' : ''}">${c.trim()}</${tag}>`).join('') + '</tr>';
+      });
+      tHtml += '</table></div>';
+      return tHtml;
+    });
+
+    // Headings
+    html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+    // Bold & Italic
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+
+    // Bullet lists & Numbered lists
+    const lines = html.split('\n');
+    let out = [];
+    let inUl = false;
+    let inOl = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const ulMatch = line.match(/^\s*[-*]\s+(.+)$/);
+      const olMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+
+      if (ulMatch) {
+        if (inOl) { out.push('</ol>'); inOl = false; }
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push(`<li>${ulMatch[1]}</li>`);
+      } else if (olMatch) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (!inOl) { out.push('<ol>'); inOl = true; }
+        out.push(`<li>${olMatch[1]}</li>`);
+      } else {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (inOl) { out.push('</ol>'); inOl = false; }
+        if (line.trim() === '---') {
+          out.push('<hr class="border-secondary my-2">');
+        } else {
+          out.push(line);
+        }
+      }
+    }
+    if (inUl) out.push('</ul>');
+    if (inOl) out.push('</ol>');
+
+    return out.join('\n').replace(/\n{2,}/g, '<br><br>').replace(/(<\/h[1-4]>|<\/ul>|<\/ol>|<\/div>|<\/pre>)\n/g, '$1');
+  }
+
+  // ─── KOMPARASI HASIL UJI BENCHMARK (A/B TESTING & AI) ──
+  const compareState = {
+    partyName: 'Party',
+    historyList: [],
+    isAnalyzing: false,
+    lastRawAiReport: '',
+    aiCache: {} // { 'aId_bId_model': { analysis, modelUsed, fallbackUsed } }
+  };
+
+  function openCompareBenchmarksModal(party, preferredBenchBId = null) {
+    if (!party || !party.benchmarks || party.benchmarks.length < 2) {
+      Swal.fire('Belum Cukup Data Uji', 'Minimal harus ada 2 hasil pengujian pada party ini untuk melakukan komparasi.', 'info');
+      return;
+    }
+
+    compareState.partyName = party.name || 'Party';
+    compareState.historyList = party.benchmarks;
+
+    const titleEl = document.getElementById('compareModalPartyName');
+    if (titleEl) titleEl.textContent = compareState.partyName;
+
+    // Default: Uji B = Terbaru (index 0), Uji A = Sebelumnya (index 1)
+    const defaultB = preferredBenchBId ? parseInt(preferredBenchBId) : party.benchmarks[0].id;
+    const secondCandidate = party.benchmarks.find(b => parseInt(b.id) !== defaultB) || party.benchmarks[1] || party.benchmarks[0];
+    const defaultA = secondCandidate.id;
+
+    populateCompareSelects(party.benchmarks, defaultA, defaultB);
+
+    const modalEl = document.getElementById('modalCompareBenchmarks');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+
+    fetchComparisonData(false);
+  }
+
+  function populateCompareSelects(historyList, selectedAId, selectedBId) {
+    const selA = document.getElementById('selectCompareBenchA');
+    const selB = document.getElementById('selectCompareBenchB');
+    if (!selA || !selB) return;
+
+    selA.innerHTML = '';
+    selB.innerHTML = '';
+    const total = historyList.length;
+
+    historyList.forEach((item, idx) => {
+      const order = total - idx;
+      const isLatest = idx === 0 ? ' [Terbaru]' : '';
+      const label = `Uji #${order} • ${item.created_at} (${item.formatted_dps} DPS | Tier ${item.tier})${isLatest}`;
+
+      const optA = document.createElement('option');
+      optA.value = item.id;
+      optA.textContent = label;
+      if (parseInt(item.id) === parseInt(selectedAId)) optA.selected = true;
+      selA.appendChild(optA);
+
+      const optB = document.createElement('option');
+      optB.value = item.id;
+      optB.textContent = label;
+      if (parseInt(item.id) === parseInt(selectedBId)) optB.selected = true;
+      selB.appendChild(optB);
+    });
+  }
+
+  function fetchComparisonData(withAi = false) {
+    const selA = document.getElementById('selectCompareBenchA');
+    const selB = document.getElementById('selectCompareBenchB');
+    if (!selA || !selB) return;
+
+    const aId = parseInt(selA.value);
+    const bId = parseInt(selB.value);
+
+    if (!aId || !bId) return;
+    if (aId === bId) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'warning',
+        title: 'Pilih 2 pengujian yang berbeda (Uji A & Uji B tidak boleh sama).',
+        showConfirmButton: false,
+        timer: 2500
+      });
+      return;
+    }
+
+    const cacheKey = `${aId}_${bId}_${geminiChatState.model}`;
+    const btnRun = document.getElementById('btnRunAiComparison');
+    const emptyState = document.getElementById('compareAiEmptyState');
+    const loadingState = document.getElementById('compareAiLoadingState');
+    const loadingText = document.getElementById('compareAiLoadingText');
+    const resultContent = document.getElementById('compareAiResultContent');
+    const copyBtn = document.getElementById('btnCopyCompareAiReport');
+    const modelBadge = document.getElementById('compareAiModelBadge');
+
+    // Jika meminta AI dan sudah ada di cache lokal, langsung tampilkan tanpa potong kuota API!
+    if (withAi && compareState.aiCache[cacheKey]) {
+      const cached = compareState.aiCache[cacheKey];
+      renderCompareAiReport(cached.analysis, cached.modelUsed, cached.fallbackUsed);
+      return;
+    }
+
+    if (withAi) {
+      if (compareState.isAnalyzing) return;
+      compareState.isAnalyzing = true;
+      if (btnRun) btnRun.disabled = true;
+      if (emptyState) emptyState.classList.add('d-none');
+      if (resultContent) resultContent.classList.add('d-none');
+      if (copyBtn) copyBtn.classList.add('d-none');
+      if (loadingText) {
+        loadingText.textContent = geminiChatState.model === 'pro'
+          ? 'Gemini Pro sedang membedah perbandingan stat & rotasi secara mendalam...'
+          : 'Gemini Flash sedang menganalisis komparasi Uji A vs Uji B...';
+      }
+      if (loadingState) loadingState.classList.remove('d-none');
+    } else {
+      // Jika hanya berganti dropdown, cek apakah kombinasi ini sudah pernah dianalisis AI
+      if (compareState.aiCache[cacheKey]) {
+        const cached = compareState.aiCache[cacheKey];
+        renderCompareAiReport(cached.analysis, cached.modelUsed, cached.fallbackUsed);
+      } else {
+        if (emptyState) emptyState.classList.remove('d-none');
+        if (loadingState) loadingState.classList.add('d-none');
+        if (resultContent) resultContent.classList.add('d-none');
+        if (copyBtn) copyBtn.classList.add('d-none');
+        if (modelBadge) {
+          modelBadge.className = 'badge bg-dark border border-secondary text-warning';
+          modelBadge.textContent = 'Siap Menganalisis';
+        }
+      }
+    }
+
+    fetch(`{{ route('party.benchmarks.compare') }}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        benchmark_a_id: aId,
+        benchmark_b_id: bId,
+        with_ai: withAi,
+        model: geminiChatState.model
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (withAi) {
+        compareState.isAnalyzing = false;
+        if (btnRun) btnRun.disabled = false;
+        if (loadingState) loadingState.classList.add('d-none');
+      }
+
+      if (data.success && data.metrics) {
+        renderComparisonMetricsUI(data.metrics);
+
+        if (withAi && data.ai_analysis) {
+          compareState.aiCache[cacheKey] = {
+            analysis: data.ai_analysis,
+            modelUsed: data.model_used || 'gemini-2.5-flash',
+            fallbackUsed: !!data.fallback_used
+          };
+          renderCompareAiReport(data.ai_analysis, data.model_used, data.fallback_used);
+        }
+      } else {
+        if (withAi && emptyState) emptyState.classList.remove('d-none');
+        Swal.fire('Gagal Membandingkan', data.message || 'Terjadi kesalahan saat memproses komparasi.', 'error');
+      }
+    })
+    .catch(err => {
+      if (withAi) {
+        compareState.isAnalyzing = false;
+        if (btnRun) btnRun.disabled = false;
+        if (loadingState) loadingState.classList.add('d-none');
+        if (emptyState) emptyState.classList.remove('d-none');
+      }
+      console.error(err);
+      Swal.fire('Error', 'Gagal menghubungi server untuk komparasi.', 'error');
+    });
+  }
+
+  function renderCompareAiReport(markdownText, modelUsed, fallbackUsed) {
+    const emptyState = document.getElementById('compareAiEmptyState');
+    const loadingState = document.getElementById('compareAiLoadingState');
+    const resultContent = document.getElementById('compareAiResultContent');
+    const copyBtn = document.getElementById('btnCopyCompareAiReport');
+    const modelBadge = document.getElementById('compareAiModelBadge');
+
+    compareState.lastRawAiReport = markdownText || '';
+
+    if (emptyState) emptyState.classList.add('d-none');
+    if (loadingState) loadingState.classList.add('d-none');
+    if (copyBtn) copyBtn.classList.remove('d-none');
+
+    if (modelBadge) {
+      const isPro = modelUsed && modelUsed.includes('pro');
+      modelBadge.className = isPro
+        ? 'badge bg-primary bg-opacity-25 border border-primary text-info'
+        : 'badge bg-warning bg-opacity-10 border border-warning text-warning';
+      modelBadge.innerHTML = `${isPro ? '🧠' : '⚡'} Dianalisis oleh: ${escapeHtml(modelUsed || 'gemini-2.5-flash')}${fallbackUsed ? ' (Auto-Fallback)' : ''}`;
+    }
+
+    if (resultContent) {
+      resultContent.innerHTML = formatChatMarkdown(markdownText);
+      resultContent.classList.remove('d-none');
+    }
+  }
+
+  function formatDeltaBadge(diffVal, pctVal = null, unit = '', lowerIsBetter = false) {
+    if (diffVal === 0 || diffVal === 0.0) {
+      return `<span class="badge bg-secondary text-light" style="font-size: 0.72rem;">Tetap (0${unit})</span>`;
+    }
+    const isPositiveGood = lowerIsBetter ? (diffVal < 0) : (diffVal > 0);
+    const sign = diffVal > 0 ? '+' : '';
+    const arrow = diffVal > 0 ? '▲' : '▼';
+    const colorClass = isPositiveGood
+      ? 'bg-success bg-opacity-25 border border-success text-success'
+      : 'bg-danger bg-opacity-25 border border-danger text-danger';
+
+    const formattedDiff = typeof diffVal === 'number' && Number.isInteger(diffVal)
+      ? numberFormat(diffVal)
+      : diffVal;
+    const pctStr = (pctVal !== null && pctVal !== undefined) ? ` (${sign}${pctVal}%)` : '';
+
+    return `<span class="badge ${colorClass} fw-bold" style="font-size: 0.74rem;">${arrow} ${sign}${formattedDiff}${unit}${pctStr}</span>`;
+  }
+
+  function formatSmallStatDiff(diffVal, suffix = '') {
+    if (!diffVal || diffVal === 0) return '';
+    const sign = diffVal > 0 ? '+' : '';
+    const cls = diffVal > 0 ? 'text-success' : 'text-danger';
+    return `<span class="${cls} fw-bold ms-1" style="font-size: 0.7rem;">(${sign}${diffVal}${suffix})</span>`;
+  }
+
+  function renderComparisonMetricsUI(m) {
+    // 1. 4 Big Cards
+    document.getElementById('compDpsValues').innerHTML = `${numberFormat(m.dps_a)} ➔ <strong class="text-gold">${numberFormat(m.dps_b)}</strong>`;
+    document.getElementById('compDpsDeltaBadge').innerHTML = formatDeltaBadge(m.dps_diff, m.dps_pct);
+
+    document.getElementById('compDmgValues').innerHTML = `${numberFormat(m.total_damage_a)} ➔ <strong class="text-gold">${numberFormat(m.total_damage_b)}</strong>`;
+    document.getElementById('compDmgDeltaBadge').innerHTML = formatDeltaBadge(m.damage_diff, m.damage_pct);
+
+    document.getElementById('compMaxHitValues').innerHTML = `${numberFormat(m.max_hit_a)} ➔ <strong class="text-gold">${numberFormat(m.max_hit_b)}</strong>`;
+    document.getElementById('compMaxHitDeltaBadge').innerHTML = formatDeltaBadge(m.max_hit_diff, m.max_hit_pct);
+
+    document.getElementById('compRotDurValues').innerHTML = `${m.avg_rot_dur_a} d ➔ <strong class="text-white">${m.avg_rot_dur_b} d</strong>`;
+    document.getElementById('compRotDurDeltaBadge').innerHTML = formatDeltaBadge(m.avg_rot_diff, null, ' d', true);
+
+    // 2. Character Table
+    const tbody = document.getElementById('tbodyCompareCharacters');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    (m.characters || []).forEach(c => {
+      const cfg = ELEMENT_CONFIG[c.element] || { color: '#c8aa6e', icon: 'bi-circle' };
+      const tr = document.createElement('tr');
+      tr.className = 'text-center';
+      tr.innerHTML = `
+        <td class="text-start fw-bold" style="color: ${cfg.color};">
+          <i class="bi ${cfg.icon} me-1"></i>${escapeHtml(c.name)}
+        </td>
+        <td>
+          ${c.dmg_pct_a}% ➔ <strong class="text-white">${c.dmg_pct_b}%</strong>
+          ${formatSmallStatDiff(c.dmg_pct_diff, '%')}
+        </td>
+        <td>
+          ${numberFormat(c.atk_a)} ➔ <strong class="text-warning">${numberFormat(c.atk_b)}</strong>
+          ${formatSmallStatDiff(c.atk_diff)}
+        </td>
+        <td>
+          ${numberFormat(c.hp_a)} ➔ <span class="text-light">${numberFormat(c.hp_b)}</span>
+          ${formatSmallStatDiff(c.hp_diff)}
+        </td>
+        <td>
+          ${c.cr_a}% ➔ <strong class="text-white">${c.cr_b}%</strong>
+          ${formatSmallStatDiff(c.cr_diff, '%')}
+        </td>
+        <td>
+          ${c.cd_a}% ➔ <strong class="text-gold">${c.cd_b}%</strong>
+          ${formatSmallStatDiff(c.cd_diff, '%')}
+        </td>
+        <td>
+          ${c.er_a}% ➔ <strong class="text-info">${c.er_b}%</strong>
+          ${formatSmallStatDiff(c.er_diff, '%')}
+        </td>
+        <td>
+          ${c.em_a} ➔ <span class="text-light">${c.em_b}</span>
+          ${formatSmallStatDiff(c.em_diff)}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
 
   // ─── UTILITIES ─────────────────────────────────────────

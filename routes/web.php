@@ -176,9 +176,11 @@ Route::middleware('auth')->group(function () {
         // Benchmarks & AI Export
         Route::post('/scan-benchmark', [\App\Http\Controllers\PartyAnalyzerController::class, 'scanBenchmarkAjax'])->name('scan-benchmark');
         Route::post('/benchmarks', [\App\Http\Controllers\PartyAnalyzerController::class, 'storeBenchmark'])->name('benchmarks.store');
+        Route::post('/benchmarks/compare', [\App\Http\Controllers\PartyAnalyzerController::class, 'compareBenchmarks'])->name('benchmarks.compare');
         Route::get('/benchmarks/{partyBenchmark}', [\App\Http\Controllers\PartyAnalyzerController::class, 'showBenchmark'])->name('benchmarks.show');
         Route::delete('/benchmarks/{partyBenchmark}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteBenchmark'])->name('benchmarks.delete');
         Route::get('/benchmarks/{partyBenchmark}/export-prompt', [\App\Http\Controllers\PartyAnalyzerController::class, 'exportGeminiPrompt'])->name('benchmarks.export-prompt');
+        Route::post('/benchmarks/{partyBenchmark}/chat', [\App\Http\Controllers\PartyAnalyzerController::class, 'chatBenchmark'])->name('benchmarks.chat');
         Route::get('/benchmarks/{partyBenchmark}/download-md', [\App\Http\Controllers\PartyAnalyzerController::class, 'downloadBenchmarkMarkdown'])->name('benchmarks.download-md');
         Route::get('/benchmarks/{partyBenchmark}/download-json', [\App\Http\Controllers\PartyAnalyzerController::class, 'downloadBenchmarkJson'])->name('benchmarks.download-json');
     });
