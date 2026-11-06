@@ -172,6 +172,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/saved/{savedParty}', [\App\Http\Controllers\PartyAnalyzerController::class, 'deleteParty'])->name('delete-saved');
         Route::get('/characters-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'charactersAjax'])->name('characters-ajax');
         Route::get('/list-ajax', [\App\Http\Controllers\PartyAnalyzerController::class, 'listAjax'])->name('list-ajax');
+        Route::post('/recommend-teams', [\App\Http\Controllers\PartyAnalyzerController::class, 'recommendTeams'])->name('recommend-teams');
 
         // Benchmarks & AI Export
         Route::post('/scan-benchmark', [\App\Http\Controllers\PartyAnalyzerController::class, 'scanBenchmarkAjax'])->name('scan-benchmark');

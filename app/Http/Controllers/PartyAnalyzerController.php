@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Character;
 use App\Models\GameAccount;
+use App\Models\InventoryArtifact;
 use App\Models\InventoryCharacter;
+use App\Models\InventoryWeapon;
 use App\Models\PartyBenchmark;
 use App\Models\SavedParty;
 use App\Services\PartyBenchmarkService;
@@ -475,6 +477,66 @@ class PartyAnalyzerController extends Controller
     }
 
     /**
+     * Endpoint Smart Team Builder (AI):
+     * Meracik 3 rekomendasi komposisi party terbaik HANYA dari karakter yang dimiliki user.
+     */
+    public function recommendTeams(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'game_account_id'     => 'nullable',
+            'anchor_character_id' => 'nullable|integer|exists:characters,id',
+            'focus'               => 'nullable|string|in:meta_abyss,abyss_two_halves,hypercarry,elemental_reaction,overworld_comfort',
+            'custom_prompt'       => 'nullable|string|max:500',
+            'model'               => 'nullable|string|in:flash,pro',
+        ]);
+
+        $rawAccountId = $validated['game_account_id'] ?? null;
+        $accountId = ($rawAccountId === 'all' || empty($rawAccountId)) ? null : (int)$rawAccountId;
+
+        $accountName = 'Gabungan Seluruh Akun Saya';
+        if ($accountId) {
+            $acc = GameAccount::find($accountId);
+            if ($acc) {
+                $accountName = "{$acc->nickname} (UID: {$acc->uid})";
+            }
+        }
+
+        try {
+            $ownedRoster = $this->getOwnedCharactersRoster($accountId);
+            $modelChoice = $validated['model'] ?? 'flash';
+
+            $options = [
+                'account_name'        => $accountName,
+                'anchor_character_id' => $validated['anchor_character_id'] ?? null,
+                'focus'               => $validated['focus'] ?? 'meta_abyss',
+                'custom_prompt'       => $validated['custom_prompt'] ?? '',
+            ];
+
+            $result = $this->benchmarkService->generateSmartTeamRecommendations(
+                $ownedRoster,
+                $options,
+                $modelChoice
+            );
+
+            return response()->json([
+                'success'       => true,
+                'account_name'  => $accountName,
+                'owned_count'   => $result['owned_count'],
+                'summary'       => $result['summary'],
+                'teams'         => $result['teams'],
+                'model_used'    => $result['model_used'],
+                'model_choice'  => $result['model_choice'],
+                'fallback_used' => $result['fallback_used'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
      * Download dokumen Markdown hasil uji untuk Gemini / NotebookLM
      */
     public function downloadBenchmarkMarkdown(PartyBenchmark $partyBenchmark)
@@ -504,7 +566,109 @@ class PartyAnalyzerController extends Controller
     }
 
     /**
-     * Helper load characters (dengan info inventory jika akun dipilih)
+     * Ambil daftar lengkap karakter yang DIMILIKI user dari tabel inventory_characters
+     * beserta senjata dan set artefak yang sedang dipasang.
+     */
+    protected function getOwnedCharactersRoster(?int $accountId): array
+    {
+        $invQuery = InventoryCharacter::with('character')
+            ->orderBy('level', 'desc')
+            ->orderBy('constellation', 'desc');
+
+        if ($accountId) {
+            $invQuery->where('game_account_id', $accountId);
+        }
+
+        $inventoryRecords = $invQuery->get();
+
+        // Deduplikasi berdasarkan character_id (ambil yang level/constellation tertinggi jika gabungan akun)
+        $uniqueInv = [];
+        foreach ($inventoryRecords as $inv) {
+            if (!$inv->character || !$inv->character->is_active) {
+                continue;
+            }
+            if (!isset($uniqueInv[$inv->character_id])) {
+                $uniqueInv[$inv->character_id] = $inv;
+            }
+        }
+
+        if (empty($uniqueInv)) {
+            return [];
+        }
+
+        $charIds = array_keys($uniqueInv);
+
+        // Load senjata yang dipasang
+        $weaponsQuery = InventoryWeapon::with('weapon')
+            ->whereIn('equipped_character_id', $charIds);
+        if ($accountId) {
+            $weaponsQuery->where('game_account_id', $accountId);
+        }
+        $equippedWeapons = $weaponsQuery->get()->keyBy('equipped_character_id');
+
+        // Load artefak yang dipasang
+        $artifactsQuery = InventoryArtifact::with('artifactSet')
+            ->whereIn('equipped_character_id', $charIds);
+        if ($accountId) {
+            $artifactsQuery->where('game_account_id', $accountId);
+        }
+        $equippedArtifacts = $artifactsQuery->get()->groupBy('equipped_character_id');
+
+        $roster = [];
+        foreach ($uniqueInv as $charId => $inv) {
+            $char = $inv->character;
+            $wep = $equippedWeapons->get($charId);
+            $weaponStr = null;
+            if ($wep && $wep->weapon) {
+                $weaponStr = "{$wep->weapon->name} (Lv.{$wep->level} R{$wep->refinement})";
+            }
+
+            $arts = $equippedArtifacts->get($charId, collect());
+            $setCounts = [];
+            foreach ($arts as $art) {
+                if ($art->artifactSet) {
+                    $sName = $art->artifactSet->name;
+                    $setCounts[$sName] = ($setCounts[$sName] ?? 0) + 1;
+                }
+            }
+            $activeSets = [];
+            foreach ($setCounts as $sName => $cnt) {
+                if ($cnt >= 4) {
+                    $activeSets[] = "4pc {$sName}";
+                } elseif ($cnt >= 2) {
+                    $activeSets[] = "2pc {$sName}";
+                }
+            }
+            $artifactStr = !empty($activeSets) ? implode(' + ', $activeSets) : null;
+
+            $na = $inv->talent_attack ?? 1;
+            $e  = $inv->talent_skill ?? 1;
+            $q  = $inv->talent_burst ?? 1;
+
+            $roster[] = [
+                'id'              => $char->id,
+                'name'            => $char->name,
+                'slug'            => $char->slug,
+                'element'         => $char->element,
+                'element_color'   => $char->element_color,
+                'weapon_type'     => $char->weapon_type,
+                'rarity'          => $char->rarity,
+                'icon_url'        => $char->icon_url,
+                'is_owned'        => true,
+                'level'           => $inv->level ?? 1,
+                'ascension'       => $inv->ascension ?? 0,
+                'constellation'   => $inv->constellation ?? 0,
+                'talents'         => "NA {$na}/E {$e}/Q {$q}",
+                'equipped_weapon' => $weaponStr,
+                'artifact_sets'   => $artifactStr,
+            ];
+        }
+
+        return $roster;
+    }
+
+    /**
+     * Helper load characters (dengan info inventory berdasarkan akun terpilih atau gabungan akun milik user)
      */
     protected function loadCharactersForAccount(?int $accountId)
     {
@@ -517,26 +681,18 @@ class PartyAnalyzerController extends Controller
             $inventory = InventoryCharacter::where('game_account_id', $accountId)
                 ->get()
                 ->keyBy('character_id');
-
-            return $allCharacters->map(function ($char) use ($inventory) {
-                $inv = $inventory->get($char->id);
-                return [
-                    'id'            => $char->id,
-                    'name'          => $char->name,
-                    'slug'          => $char->slug,
-                    'element'       => $char->element,
-                    'element_color' => $char->element_color,
-                    'weapon_type'   => $char->weapon_type,
-                    'rarity'        => $char->rarity,
-                    'icon_url'      => $char->icon_url,
-                    'is_owned'      => $inv !== null,
-                    'level'         => $inv?->level,
-                    'constellation' => $inv?->constellation,
-                ];
-            });
+        } else {
+            // Urutkan level asc agar keyBy menyimpan record dengan level tertinggi untuk character_id yang sama
+            $inventory = InventoryCharacter::orderBy('level', 'asc')
+                ->orderBy('constellation', 'asc')
+                ->get()
+                ->keyBy('character_id');
         }
 
-        return $allCharacters->map(function ($char) {
+        $hasAnyInventory = $inventory->isNotEmpty();
+
+        return $allCharacters->map(function ($char) use ($inventory, $hasAnyInventory) {
+            $inv = $inventory->get($char->id);
             return [
                 'id'            => $char->id,
                 'name'          => $char->name,
@@ -546,9 +702,9 @@ class PartyAnalyzerController extends Controller
                 'weapon_type'   => $char->weapon_type,
                 'rarity'        => $char->rarity,
                 'icon_url'      => $char->icon_url,
-                'is_owned'      => true,
-                'level'         => null,
-                'constellation' => null,
+                'is_owned'      => $hasAnyInventory ? ($inv !== null) : true,
+                'level'         => $inv?->level,
+                'constellation' => $inv?->constellation,
             ];
         });
     }

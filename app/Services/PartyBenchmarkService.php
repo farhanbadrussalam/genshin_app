@@ -549,9 +549,9 @@ SYS;
         // Tentukan urutan model berdasarkan pilihan user ('flash' atau 'pro') beserta fallback aman
         $defaultFlash = $this->model ?: 'gemini-2.5-flash';
         if ($modelChoice === 'pro') {
-            $candidateModels = ['gemini-2.5-pro', 'gemini-1.5-pro', $defaultFlash];
+            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
         } else {
-            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.0-flash']));
+            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
         }
 
         $payload = [
@@ -563,7 +563,7 @@ SYS;
             'contents' => $contents,
             'generationConfig' => [
                 'temperature'     => 0.4,
-                'maxOutputTokens' => 4096,
+                'maxOutputTokens' => 8192,
             ],
         ];
 
@@ -823,9 +823,9 @@ PROMPT;
 
         $defaultFlash = $this->model ?: 'gemini-2.5-flash';
         if ($modelChoice === 'pro') {
-            $candidateModels = ['gemini-2.5-pro', 'gemini-1.5-pro', $defaultFlash];
+            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
         } else {
-            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.0-flash']));
+            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
         }
 
         $payload = [
@@ -837,7 +837,7 @@ PROMPT;
             ],
             'generationConfig' => [
                 'temperature'     => 0.35,
-                'maxOutputTokens' => 4096,
+                'maxOutputTokens' => 8192,
             ],
         ];
 
@@ -891,5 +891,314 @@ PROMPT;
         }
 
         throw new \Exception('Gagal menghasilkan analisis komparasi dari Gemini AI: ' . ($lastError ?? 'Tidak ada respons dari server.'));
+    }
+
+    /**
+     * Racik rekomendasi komposisi party terbaik menggunakan Gemini AI
+     * WAJIB 100% hanya dari daftar karakter yang dimiliki pemain ($ownedCharacters).
+     *
+     * @param  array  $ownedCharacters  Daftar karakter yang dimiliki pemain beserta level, constellation, senjata, dan artefak
+     * @param  array  $options          Preferensi pemain: anchor_character_id, focus, custom_prompt, account_name
+     * @param  string $modelChoice      'flash' atau 'pro'
+     * @return array
+     */
+    public function generateSmartTeamRecommendations(array $ownedCharacters, array $options = [], string $modelChoice = 'flash'): array
+    {
+        if (!$this->apiKey) {
+            throw new \Exception('GEMINI_API_KEY belum dikonfigurasi pada file .env sistem.');
+        }
+
+        if (count($ownedCharacters) < 4) {
+            throw new \Exception('Jumlah karakter yang dimiliki pada akun ini kurang dari 4 karakter (' . count($ownedCharacters) . ' karakter). Tambahkan minimal 4 karakter di menu Inventori Karakter terlebih dahulu.');
+        }
+
+        // Urutkan karakter: level tertinggi, constellation tertinggi, rarity tertinggi
+        usort($ownedCharacters, function ($a, $b) {
+            $lvlA = (int)($a['level'] ?? 1);
+            $lvlB = (int)($b['level'] ?? 1);
+            if ($lvlA !== $lvlB) return $lvlB <=> $lvlA;
+
+            $consA = (int)($a['constellation'] ?? 0);
+            $consB = (int)($b['constellation'] ?? 0);
+            if ($consA !== $consB) return $consB <=> $consA;
+
+            return (int)($b['rarity'] ?? 4) <=> (int)($a['rarity'] ?? 4);
+        });
+
+        // Buat peta lookup berdasarkan ID dan Nama (lowercase) untuk validasi ketat 100% milik user
+        $ownedById = [];
+        $ownedByName = [];
+        $rosterLines = [];
+
+        foreach ($ownedCharacters as $char) {
+            $id = (int)$char['id'];
+            $ownedById[$id] = $char;
+            $ownedByName[strtolower(trim($char['name']))] = $char;
+
+            $lvl = $char['level'] ?? 1;
+            $cons = $char['constellation'] ?? 0;
+            $talents = $char['talents'] ?? '-';
+            $weapon = $char['equipped_weapon'] ?: '-';
+            $artifacts = $char['artifact_sets'] ?: '-';
+
+            $rosterLines[] = "| {$id} | {$char['name']} | {$char['element']} | {$char['weapon_type']} | ★{$char['rarity']} | Lv.{$lvl} (C{$cons}) | {$talents} | {$weapon} | {$artifacts} |";
+        }
+
+        $rosterTable = "| ID | Nama Karakter | Elemen | Senjata | Rarity | Level & Cons | Talent | Senjata Terpasang | Set Artefak |\n";
+        $rosterTable .= "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n";
+        $rosterTable .= implode("\n", $rosterLines);
+
+        // Anchor character (opsional)
+        $anchorId = !empty($options['anchor_character_id']) ? (int)$options['anchor_character_id'] : null;
+        $anchorChar = ($anchorId && isset($ownedById[$anchorId])) ? $ownedById[$anchorId] : null;
+        $anchorInstruction = $anchorChar
+            ? "WAJIB MENYERTAKAN KARAKTER UTAMA PILIHAN USER: **{$anchorChar['name']} (ID: {$anchorChar['id']}, {$anchorChar['element']}, Lv.{$anchorChar['level']} C{$anchorChar['constellation']})** minimal pada Rekomendasi Tim #1 (dan Tim #2 jika memungkinkan)."
+            : "Bebas memilih kombinasi karakter terbaik dari daftar karakter milik pemain di atas.";
+
+        $focus = $options['focus'] ?? 'meta_abyss';
+        $focusInstruction = match ($focus) {
+            'abyss_two_halves' => "Buat **2 Tim Utama Berbeda untuk Spiral Abyss Lantai 12 (Tim #1: First Half & Tim #2: Second Half)** yang **TIDAK BOLEH berbagi karakter yang sama (8 karakter unik berbeda di antara Tim #1 dan Tim #2)**, ditambah **Tim #3 sebagai Tim Alternatif/Fleksibel**.",
+            'hypercarry'       => "Fokus pada formasi **Hypercarry** (1 Main DPS on-field yang didukung penuh oleh 3 Buffer/Debuffer/Shielder/Healer untuk memaksimalkan damage utama).",
+            'elemental_reaction' => "Fokus pada formasi **Reaksi Elemental Maksimal** (seperti Vaporize, Hyperbloom, Melt, Aggravate/Spread, atau Electro-Charged/Lunar-Charged).",
+            'overworld_comfort'  => "Fokus pada formasi **Eksplorasi Overworld & Comfort** (kombinasi DPS yang praktis tanpa ketergantungan Burst berlebih, punya mobilitas tinggi, shield/healer nyaman, dan elemen variatif).",
+            default              => "Fokus pada **3 Kombinasi Tim Meta Terbaik (Spiral Abyss Lantai 12 Ready)** dengan potensi DPS tertinggi, sinergi reaksi elemen terbaik, dan rotasi paling stabil.",
+        };
+
+        $customPrompt = trim((string)($options['custom_prompt'] ?? ''));
+        $customInstruction = $customPrompt !== ''
+            ? "CATATAN / PERMINTAAN KHUSUS DARI PEMAIN: \"{$customPrompt}\" — Pastikan rekomendasi mematuhi permintaan ini."
+            : "Prioritaskan karakter yang sudah memiliki Level tinggi, Constellation bagus, serta senjata/artefak yang sudah terpasang.";
+
+        $accountName = $options['account_name'] ?? 'Akun Pemain';
+        $ownedCount = count($ownedCharacters);
+
+        $prompt = <<<PROMPT
+Anda adalah **Master Theorycrafter & Smart Team Builder Genshin Impact** berbahasa Indonesia.
+Tugas Anda adalah meracik **3 Rekomendasi Formasi Party ( masing-masing tepat 4 karakter )** untuk akun **{$accountName}**.
+
+### ATURAN MUTLAK (SANGAT PENTING):
+1. **WAJIB 100% HANYA MENGGUNAKAN KARAKTER DARI TABEL DAFTAR KARAKTER MILIK PEMAIN DI BAWAH INI!**
+2. **DILARANG KERAS** memasukkan karakter yang TIDAK ADA di dalam tabel di bawah ini, meskipun karakter tersebut populer di meta.
+3. Gunakan `character_id` dan `name` yang **PERSIS SAMA** dengan yang tertera pada tabel.
+4. Dalam 1 tim harus terdiri dari **tepat 4 karakter berbeda** (tidak boleh ada karakter kembar di dalam 1 tim).
+5. Perhatikan **Level, Constellation (C0-C6), Talent, Senjata Terpasang, dan Set Artefak** milik pemain agar rekomendasi benar-benar akurat sesuai kondisi akun pemain.
+
+### PREFERENSI & TARGET PEMAIN:
+- **Fokus Strategi**: {$focusInstruction}
+- **Karakter Jangkar (Anchor)**: {$anchorInstruction}
+- **Catatan Tambahan**: {$customInstruction}
+
+### DAFTAR KARAKTER YANG DIMILIKI PEMAIN ({$ownedCount} Karakter):
+{$rosterTable}
+
+### FORMAT OUTPUT JSON YANG DIWAJIBKAN:
+Kembalikan **HANYA JSON murni** dengan struktur berikut:
+{
+  "summary": "Ringkasan analisis singkat (2-3 kalimat) mengenai kekuatan roster akun pemain ini dan alasan pemilihan tim.",
+  "teams": [
+    {
+      "team_name": "Nama Tim (contoh: Neuvillette Hypercarry / Raiden National / Abyss First Half)",
+      "archetype": "Kategori Tim (contoh: Hypercarry / Quickbloom / Vaporize / Abyss Team 1)",
+      "tier_prediction": "SS atau S atau A",
+      "estimated_dps": "Estimasi potensi DPS (contoh: 80.000 - 105.000 DPS)",
+      "members": [
+        {
+          "character_id": Integer ID karakter sesuai tabel di atas,
+          "name": "Nama karakter persis sesuai tabel",
+          "role": "Peran di tim (contoh: Main DPS / Sub-DPS / Buffer / Healer / Shielder)",
+          "build_tip": "Saran singkat senjata/artefak untuk karakter ini berdasarkan yang sudah dipakai pemain"
+        }
+      ],
+      "elemental_reactions": ["Nama Reaksi 1", "Nama Reaksi 2"],
+      "synergy_explanation": "Penjelasan padat & jelas mengapa 4 karakter milik pemain ini sangat kuat bersama (sebutkan juga keuntungan Constellation/Senjata milik pemain).",
+      "rotation_guide": [
+        "Langkah 1: Nama Karakter — Skill (E) / Burst (Q) beserta alasannya",
+        "Langkah 2: ...",
+        "Langkah 3: ...",
+        "Langkah 4: ..."
+      ]
+    }
+  ]
+}
+PROMPT;
+
+        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
+        if ($modelChoice === 'pro') {
+            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
+        } else {
+            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
+        }
+
+        $payload = [
+            'contents' => [
+                [
+                    'role'  => 'user',
+                    'parts' => [['text' => $prompt]],
+                ],
+            ],
+            'generationConfig' => [
+                'response_mime_type' => 'application/json',
+                'temperature'        => 0.2,
+                'maxOutputTokens'    => 8192,
+            ],
+        ];
+
+        $lastError = null;
+        foreach ($candidateModels as $idx => $modelName) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
+
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(65)->post($url, $payload);
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $parts = $result['candidates'][0]['content']['parts'] ?? [];
+                    $jsonText = '';
+
+                    foreach ($parts as $part) {
+                        if (!empty($part['thought'])) {
+                            continue;
+                        }
+                        if (isset($part['text'])) {
+                            $jsonText .= $part['text'];
+                        }
+                    }
+
+                    $jsonText = trim($jsonText);
+                    // Bersihkan markdown fence jika ada
+                    if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/i', $jsonText, $matches)) {
+                        $jsonText = trim($matches[1]);
+                    } elseif (str_starts_with($jsonText, '```')) {
+                        $jsonText = preg_replace('/^```(?:json)?\s*|\s*```$/i', '', $jsonText);
+                    }
+
+                    $parsed = json_decode($jsonText, true);
+                    if (!is_array($parsed)) {
+                        Log::warning("Gemini JSON decode error: " . json_last_error_msg() . " | Length: " . strlen($jsonText) . " | Output: " . substr($jsonText, 0, 300));
+                    }
+
+                    if (is_array($parsed) && !empty($parsed['teams']) && is_array($parsed['teams'])) {
+                        $validatedTeams = [];
+
+                        foreach ($parsed['teams'] as $rawTeam) {
+                            $rawMembers = $rawTeam['members'] ?? [];
+                            $resolvedMembers = [];
+                            $usedIds = [];
+
+                            foreach ($rawMembers as $m) {
+                                $cid = isset($m['character_id']) ? (int)$m['character_id'] : null;
+                                $cname = strtolower(trim((string)($m['name'] ?? '')));
+
+                                $matchedChar = null;
+                                if ($cid && isset($ownedById[$cid])) {
+                                    $matchedChar = $ownedById[$cid];
+                                } elseif ($cname !== '' && isset($ownedByName[$cname])) {
+                                    $matchedChar = $ownedByName[$cname];
+                                } else {
+                                    // Coba partial match jika nama sedikit berbeda
+                                    foreach ($ownedByName as $oName => $oChar) {
+                                        if ($cname !== '' && (str_contains($oName, $cname) || str_contains($cname, $oName))) {
+                                            $matchedChar = $oChar;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if ($matchedChar && !in_array($matchedChar['id'], $usedIds, true)) {
+                                    $usedIds[] = $matchedChar['id'];
+                                    $resolvedMembers[] = [
+                                        'id'              => $matchedChar['id'],
+                                        'name'            => $matchedChar['name'],
+                                        'slug'            => $matchedChar['slug'],
+                                        'element'         => $matchedChar['element'],
+                                        'element_color'   => $matchedChar['element_color'],
+                                        'weapon_type'     => $matchedChar['weapon_type'],
+                                        'rarity'          => $matchedChar['rarity'],
+                                        'icon_url'        => $matchedChar['icon_url'],
+                                        'level'           => $matchedChar['level'],
+                                        'constellation'   => $matchedChar['constellation'],
+                                        'talents'         => $matchedChar['talents'],
+                                        'equipped_weapon' => $matchedChar['equipped_weapon'],
+                                        'artifact_sets'   => $matchedChar['artifact_sets'],
+                                        'role'            => $m['role'] ?? 'Sub-DPS / Support',
+                                        'build_tip'       => $m['build_tip'] ?? '',
+                                    ];
+                                }
+                            }
+
+                            // Jika karena suatu hal ada slot yang kurang dari 4, lengkapi dari karakter milik user tertinggi yang belum dipakai di tim ini
+                            if (count($resolvedMembers) < 4) {
+                                foreach ($ownedCharacters as $fallbackChar) {
+                                    if (!in_array($fallbackChar['id'], $usedIds, true)) {
+                                        $usedIds[] = $fallbackChar['id'];
+                                        $resolvedMembers[] = [
+                                            'id'              => $fallbackChar['id'],
+                                            'name'            => $fallbackChar['name'],
+                                            'slug'            => $fallbackChar['slug'],
+                                            'element'         => $fallbackChar['element'],
+                                            'element_color'   => $fallbackChar['element_color'],
+                                            'weapon_type'     => $fallbackChar['weapon_type'],
+                                            'rarity'          => $fallbackChar['rarity'],
+                                            'icon_url'        => $fallbackChar['icon_url'],
+                                            'level'           => $fallbackChar['level'],
+                                            'constellation'   => $fallbackChar['constellation'],
+                                            'talents'         => $fallbackChar['talents'],
+                                            'equipped_weapon' => $fallbackChar['equipped_weapon'],
+                                            'artifact_sets'   => $fallbackChar['artifact_sets'],
+                                            'role'            => 'Flex Support',
+                                            'build_tip'       => 'Sesuaikan dengan kebutuhan elemen tim.',
+                                        ];
+                                        if (count($resolvedMembers) === 4) {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            $resolvedMembers = array_slice($resolvedMembers, 0, 4);
+
+                            $validatedTeams[] = [
+                                'team_name'           => $rawTeam['team_name'] ?? 'Rekomendasi Party AI',
+                                'archetype'           => $rawTeam['archetype'] ?? 'Balanced Meta',
+                                'tier_prediction'     => in_array($rawTeam['tier_prediction'] ?? 'S', ['SS', 'S', 'A', 'B']) ? $rawTeam['tier_prediction'] : 'S',
+                                'estimated_dps'       => $rawTeam['estimated_dps'] ?? '70.000+ DPS',
+                                'character_ids'       => array_map(fn($c) => $c['id'], $resolvedMembers),
+                                'members'             => $resolvedMembers,
+                                'elemental_reactions' => is_array($rawTeam['elemental_reactions'] ?? null) ? $rawTeam['elemental_reactions'] : [],
+                                'synergy_explanation' => $rawTeam['synergy_explanation'] ?? '',
+                                'rotation_guide'      => is_array($rawTeam['rotation_guide'] ?? null) ? $rawTeam['rotation_guide'] : [],
+                            ];
+                        }
+
+                        if (!empty($validatedTeams)) {
+                            return [
+                                'summary'       => $parsed['summary'] ?? 'Berikut adalah rekomendasi komposisi tim terbaik berdasarkan karakter yang Anda miliki.',
+                                'teams'         => $validatedTeams,
+                                'owned_count'   => count($ownedCharacters),
+                                'model_used'    => $modelName,
+                                'model_choice'  => $modelChoice,
+                                'fallback_used' => ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash')),
+                            ];
+                        }
+                    }
+                }
+
+                $status = $response->status();
+                $errMsg = $response->json('error.message') ?? "HTTP {$status}";
+                $lastError = $errMsg;
+                Log::warning("Gemini SmartTeamBuilder percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
+                    break;
+                }
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+                Log::warning("Gemini SmartTeamBuilder exception pada model {$modelName}: " . $e->getMessage());
+            }
+        }
+
+        throw new \Exception('Gagal meracik rekomendasi tim dari Gemini AI: ' . ($lastError ?? 'Tidak ada respons dari server.'));
     }
 }

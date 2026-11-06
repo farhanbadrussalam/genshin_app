@@ -39,7 +39,10 @@
         </button>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-smart-builder" id="btnOpenSmartBuilder" title="Racik rekomendasi party otomatis dengan AI dari karakter yang kamu miliki">
+          <i class="bi bi-stars me-1"></i>Smart Team Builder (AI)
+        </button>
         <button type="button" class="btn btn-sm btn-outline-warning" id="btnOpenCharPicker" title="Buka modal pemilihan karakter">
           <i class="bi bi-person-plus-fill me-1"></i>Pilih Karakter
         </button>
@@ -283,7 +286,16 @@
                 <i class="bi {{ $meta['icon'] }} me-1"></i>{{ $elem }}
               </button>
             @endforeach
-            <span class="ms-auto small text-muted" id="catalogCountLabel">({{ count($characters) }})</span>
+
+            <div class="ms-auto d-flex align-items-center gap-3">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="filterOwnedOnly" checked style="cursor: pointer;">
+                <label class="form-check-label small text-warning fw-bold" for="filterOwnedOnly" style="cursor: pointer; font-size: 0.78rem;">
+                  <i class="bi bi-check2-circle me-1"></i>Hanya Karakter Dimiliki
+                </label>
+              </div>
+              <span class="small text-muted" id="catalogCountLabel">({{ count($characters) }})</span>
+            </div>
           </div>
         </div>
 
@@ -982,6 +994,191 @@
       <div class="modal-footer border-top-genshin py-2 d-flex justify-content-between align-items-center">
         <span class="small text-muted" style="font-size: 0.72rem;">
           <i class="bi bi-lightbulb text-warning me-1"></i>Tips: Gunakan Uji A untuk setup lama dan Uji B untuk setup baru agar persentase peningkatan positif (+).
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- =========================================================================
+     MODAL 5: SMART TEAM BUILDER AI (REKOMENDASI TIM DARI KARAKTER DIMILIKI)
+     ========================================================================= --}}
+<div class="modal fade" id="modalSmartTeamBuilder" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content genshin-panel-card border-gold-glow">
+      <div class="modal-header border-bottom-genshin py-2">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 w-100 me-2">
+          <div>
+            <h5 class="modal-title text-gold font-display mb-0" style="font-size: 1.15rem;">
+              <i class="bi bi-stars text-warning me-2"></i>Smart Team Builder AI — Racik dari Karakter Milikmu
+            </h5>
+            <div class="small text-muted" style="font-size: 0.75rem;">
+              100% menggunakan daftar karakter, Level, Constellation, Senjata, dan Set Artefak yang kamu miliki di inventori.
+            </div>
+          </div>
+
+          {{-- Model Switcher in Smart Team Builder --}}
+          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="smartBuilderModelSwitchGroup">
+            <span class="small text-muted px-2 d-none d-md-inline" style="font-size: 0.72rem;">
+              <i class="bi bi-cpu me-1"></i>Model AI:
+            </span>
+            <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model active" data-model="flash" title="Cepat, kuota lega & akurat">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+            </button>
+            <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model" data-model="pro" title="Reasoning теория mendalam (Auto-fallback ke Flash jika limit)">
+              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-3 p-md-4" style="background: #0d101a;">
+        {{-- Filter & Configuration Box --}}
+        <div class="p-3 mb-3 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(200, 170, 110, 0.28);">
+          <div class="row g-3 align-items-end">
+            {{-- 1. Pilih Akun Game --}}
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-gold fw-bold mb-1">
+                <i class="bi bi-person-badge me-1"></i>Sumber Karakter (Akun Game)
+              </label>
+              <select id="smartBuilderAccountSelect" class="form-select form-select-sm genshin-select">
+                <option value="">Semua Karakter Dimiliki (Gabungan Akun)</option>
+                @foreach($gameAccounts as $acc)
+                  <option value="{{ $acc->id }}" {{ $selectedAccountId == $acc->id ? 'selected' : '' }}>
+                    {{ $acc->nickname }} — {{ $acc->inventory_characters_count }} Karakter (UID: {{ $acc->uid }})
+                  </option>
+                @endforeach
+              </select>
+            </div>
+
+            {{-- 2. Fokus Strategi Tim --}}
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-gold fw-bold mb-1">
+                <i class="bi bi-compass me-1"></i>Fokus Strategi & Tujuan Tim
+              </label>
+              <select id="smartBuilderFocusSelect" class="form-select form-select-sm genshin-select">
+                <option value="meta_abyss">🏆 Spiral Abyss Lantai 12 (3 Tim Meta DPS Terbaik)</option>
+                <option value="abyss_two_halves">⚔️ 2 Tim Spiral Abyss (First & Second Half Tanpa Kembar)</option>
+                <option value="hypercarry">💥 Hypercarry (1 Main DPS + 3 Buffer/Support)</option>
+                <option value="elemental_reaction">⚡ Reaksi Elemental Maksimal (Vaporize/Hyperbloom/Melt)</option>
+                <option value="overworld_comfort">🧭 Eksplorasi Overworld & Comfort (Shield/Heal/Praktis)</option>
+              </select>
+            </div>
+
+            {{-- 3. Karakter Jangkar / Favorit (Wajib Masuk) --}}
+            <div class="col-12 col-md-4">
+              <label class="form-label small text-gold fw-bold mb-1">
+                <i class="bi bi-pin-angle-fill me-1"></i>Wajib Sertakan Karakter (Opsional)
+              </label>
+              <select id="smartBuilderAnchorSelect" class="form-select form-select-sm genshin-select">
+                <option value="">-- Bebas (Biarkan AI Memilih Semua) --</option>
+              </select>
+            </div>
+
+            {{-- 4. Catatan Tambahan & Tombol Generate --}}
+            <div class="col-12 col-md-8">
+              <label class="form-label small text-gold fw-bold mb-1">
+                <i class="bi bi-chat-square-quote me-1"></i>Permintaan / Kondisi Khusus (Opsional)
+              </label>
+              <input type="text" id="smartBuilderCustomPrompt" class="form-control form-control-sm genshin-input" placeholder="Contoh: Prioritaskan karakter Level 80+, lawan Boss Single Target, atau hindari karakter tertentu...">
+              <div class="d-flex flex-wrap align-items-center gap-1 mt-2">
+                <span class="small text-muted me-1" style="font-size: 0.7rem;">Cepat:</span>
+                <button type="button" class="btn btn-xs smart-prompt-chip" data-note="Prioritaskan karakter yang sudah Level 80-90 dan siap tempur">
+                  🔥 Prioritas Lv.80-90
+                </button>
+                <button type="button" class="btn btn-xs smart-prompt-chip" data-note="Fokus lawan Boss Single Target HP tebal di Spiral Abyss">
+                  🎯 Boss Single Target
+                </button>
+                <button type="button" class="btn btn-xs smart-prompt-chip" data-note="Fokus AoE multi-wave banyak musuh sekaligus">
+                  🌪️ AoE Multi-Wave
+                </button>
+                <button type="button" class="btn btn-xs smart-prompt-chip" data-note="Wajib ada Healer atau Shielder kuat agar tim aman dan tidak mudah mati">
+                  🛡️ Wajib Ada Shield/Healer
+                </button>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-4 d-grid">
+              <button type="button" class="btn btn-genshin py-2 fw-bold" id="btnGenerateSmartTeams">
+                <i class="bi bi-magic me-1"></i>Racik Rekomendasi Tim AI
+              </button>
+            </div>
+          </div>
+
+          {{-- Bar Info Karakter yang Dimiliki User --}}
+          <div class="mt-3 pt-2 border-top-genshin d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success bg-opacity-25 border border-success text-success" id="smartBuilderOwnedCountBadge">
+                <i class="bi bi-check2-all me-1"></i>0 Karakter Dimiliki
+              </span>
+              <span class="small text-muted" style="font-size: 0.74rem;">
+                AI hanya diizinkan memilih dari daftar karakter yang terdata di inventori akunmu.
+              </span>
+            </div>
+            <button class="btn btn-xs btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOwnedRosterPreview" aria-expanded="false" style="font-size: 0.72rem;">
+              <i class="bi bi-eye me-1"></i>Lihat Daftar Karakter Saya
+            </button>
+          </div>
+
+          <div class="collapse mt-2" id="collapseOwnedRosterPreview">
+            <div class="p-2 rounded d-flex flex-wrap gap-1" id="smartBuilderOwnedPillsContainer" style="background: rgba(0, 0, 0, 0.35); max-height: 130px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.08);">
+              <!-- Diisi via JS -->
+            </div>
+          </div>
+        </div>
+
+        {{-- Empty State --}}
+        <div id="smartBuilderEmptyState" class="text-center py-5 px-3 rounded" style="background: rgba(255,255,255,0.015); border: 1px dashed rgba(200, 170, 110, 0.25);">
+          <div class="mb-2">
+            <i class="bi bi-stars text-warning" style="font-size: 2.6rem;"></i>
+          </div>
+          <h6 class="text-gold font-display mb-1">Siap Meracik Tim Terbaik dari Koleksi Karaktermu!</h6>
+          <p class="small text-muted mx-auto mb-3" style="max-width: 580px;">
+            Pilih fokus strategi di atas (misalnya <strong>Spiral Abyss Lantai 12</strong> atau <strong>2 Tim Abyss Tanpa Karakter Kembar</strong>), lalu klik tombol <strong>"Racik Rekomendasi Tim AI"</strong>. Kamu bisa langsung memuat hasilnya ke Party Builder atau menyimpannya dengan 1 klik.
+          </p>
+        </div>
+
+        {{-- Loading State --}}
+        <div id="smartBuilderLoadingState" class="text-center py-5 d-none">
+          <div class="spinner-border text-warning mb-3" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+          <h6 class="text-gold font-display mb-1" id="smartBuilderLoadingTitle">
+            Gemini AI sedang menganalisis koleksi karaktermu...
+          </h6>
+          <p class="small text-muted mb-0">
+            Mengevaluasi sinergi elemen, resonansi, Level, Constellation, serta Senjata & Set Artefak yang terpasang...
+          </p>
+        </div>
+
+        {{-- Results Container --}}
+        <div id="smartBuilderResultsContainer" class="d-none">
+          {{-- AI Summary Banner --}}
+          <div class="p-3 mb-3 rounded d-flex flex-wrap align-items-start justify-content-between gap-2" style="background: linear-gradient(135deg, rgba(200, 170, 110, 0.14) 0%, rgba(15, 18, 28, 0.95) 100%); border: 1px solid rgba(200, 170, 110, 0.35);">
+            <div class="d-flex align-items-start gap-2" style="flex: 1; min-width: 260px;">
+              <div class="chat-ai-avatar-badge mt-1">
+                <i class="bi bi-robot"></i>
+              </div>
+              <div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <span class="fw-bold text-gold small">Ringkasan Analisis Roster Akun</span>
+                  <span class="badge bg-dark border border-secondary text-warning" id="smartBuilderModelUsedBadge" style="font-size: 0.68rem;"></span>
+                </div>
+                <p class="small text-light mb-0" id="smartBuilderSummaryText" style="line-height: 1.5;"></p>
+              </div>
+            </div>
+          </div>
+
+          {{-- 3 Recommended Teams Grid --}}
+          <div class="d-flex flex-column gap-3" id="smartBuilderTeamsGrid">
+            <!-- Diisi via JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top-genshin py-2 d-flex justify-content-between align-items-center">
+        <span class="small text-muted" style="font-size: 0.72rem;">
+          <i class="bi bi-shield-check text-success me-1"></i>Setiap karakter yang direkomendasikan dijamin berasal dari inventori karakter milikmu.
         </span>
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
@@ -1790,6 +1987,68 @@
     border-radius: 4px;
     font-size: 0.78rem;
   }
+
+  /* ─── Smart Team Builder Styles ─────────────────── */
+  .btn-smart-builder {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d97706 100%);
+    color: #fff;
+    border: 1px solid rgba(251, 191, 36, 0.55);
+    font-weight: 700;
+    border-radius: 8px;
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.35);
+    transition: all 0.25s ease;
+  }
+
+  .btn-smart-builder:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 18px rgba(251, 191, 36, 0.45);
+    border-color: #fbbf24;
+  }
+
+  .smart-prompt-chip {
+    background: rgba(200, 170, 110, 0.08);
+    border: 1px solid rgba(200, 170, 110, 0.28);
+    color: #e5e7eb;
+    font-size: 0.7rem;
+    padding: 3px 9px;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+  }
+
+  .smart-prompt-chip:hover {
+    background: rgba(200, 170, 110, 0.22);
+    border-color: var(--color-gold-bright);
+    color: #fff;
+  }
+
+  .smart-team-card {
+    background: linear-gradient(180deg, rgba(20, 24, 38, 0.98) 0%, rgba(12, 15, 24, 0.98) 100%);
+    border: 1px solid rgba(200, 170, 110, 0.32);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+  }
+
+  .smart-team-card:hover {
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  }
+
+  .smart-member-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid var(--elem-color, #c8aa6e);
+    border-radius: 10px;
+    padding: 0.65rem;
+    height: 100%;
+    transition: all 0.2s ease;
+  }
+
+  .smart-member-card:hover {
+    background: rgba(255, 255, 255, 0.055);
+    transform: translateY(-2px);
+  }
 </style>
 @endpush
 
@@ -1827,7 +2086,8 @@
     search: '',
     element: 'all',
     rarity: 'all',
-    weapon: 'all'
+    weapon: 'all',
+    ownedOnly: true
   };
 
   // Active benchmark viewing / scanning
@@ -1910,6 +2170,8 @@
     renderSavedParties();
     bindEvents();
     bindBenchmarkEvents();
+    bindSmartTeamBuilderEvents();
+    refreshSmartBuilderOwnedRosterUI();
   });
 
   // ─── BIND CORE BUILDER EVENTS ──────────────────────────
@@ -1940,6 +2202,21 @@
     if (btnOpenPicker) {
       btnOpenPicker.addEventListener('click', function () {
         openCharacterPickerModal(partyState.activeSlotIndex);
+      });
+    }
+
+    const btnOpenSmart = document.getElementById('btnOpenSmartBuilder');
+    if (btnOpenSmart) {
+      btnOpenSmart.addEventListener('click', function () {
+        openSmartTeamBuilderModal();
+      });
+    }
+
+    const filterOwnedToggle = document.getElementById('filterOwnedOnly');
+    if (filterOwnedToggle) {
+      filterOwnedToggle.addEventListener('change', function (e) {
+        filterState.ownedOnly = e.target.checked;
+        renderCharacterCatalog();
       });
     }
 
@@ -2002,9 +2279,12 @@
       filterState.element = 'all';
       filterState.rarity = 'all';
       filterState.weapon = 'all';
+      filterState.ownedOnly = false;
       document.getElementById('charSearchInput').value = '';
       document.getElementById('filterRarity').value = 'all';
       document.getElementById('filterWeapon').value = 'all';
+      const ownedSwitch = document.getElementById('filterOwnedOnly');
+      if (ownedSwitch) ownedSwitch.checked = false;
       document.querySelectorAll('.btn-element-filter').forEach(b => {
         b.classList.toggle('active', b.getAttribute('data-element') === 'all');
       });
@@ -2287,6 +2567,7 @@
     const selectedIds = new Set(partyState.slots.filter(Boolean).map(c => c.id));
 
     const filtered = window.allCharacters.filter(c => {
+      if (filterState.ownedOnly && !c.is_owned) return false;
       if (filterState.search && !c.name.toLowerCase().includes(filterState.search)) return false;
       if (filterState.element !== 'all' && c.element.toLowerCase() !== filterState.element.toLowerCase()) return false;
       if (filterState.rarity !== 'all' && parseInt(c.rarity) !== parseInt(filterState.rarity)) return false;
@@ -2294,7 +2575,10 @@
       return true;
     });
 
-    document.getElementById('catalogCountLabel').textContent = `(${filtered.length} dari ${window.allCharacters.length})`;
+    const totalOwned = window.allCharacters.filter(c => c.is_owned).length;
+    document.getElementById('catalogCountLabel').textContent = filterState.ownedOnly
+      ? `(${filtered.length} dari ${totalOwned} dimiliki)`
+      : `(${filtered.length} dari ${window.allCharacters.length} total)`;
 
     if (filtered.length === 0) {
       emptyState.classList.remove('d-none');
@@ -2312,6 +2596,9 @@
       col.className = 'col';
 
       const slotTagHtml = isSelected ? `<span class="char-slot-tag">Slot ${slotIdx + 1}</span>` : '';
+      const ownedBadgeHtml = (char.is_owned && char.level)
+        ? `<div class="mt-1"><span class="badge bg-dark border border-secondary text-warning" style="font-size: 0.62rem;">Lv.${char.level} C${char.constellation ?? 0}</span></div>`
+        : '';
       const tooltip = isSelected
         ? `${char.name} (${char.element} - ${char.weapon_type}) • Terpilih di Slot ${slotIdx + 1}`
         : `${char.name} (${char.element} - ${char.weapon_type})`;
@@ -2328,6 +2615,7 @@
             </span>
             <span class="text-warning" style="font-size: 0.65rem;">★${char.rarity || 5}</span>
           </div>
+          ${ownedBadgeHtml}
           ${slotTagHtml}
         </div>
       `;
@@ -2740,6 +3028,7 @@
         });
         renderSlots();
         renderCharacterCatalog();
+        refreshSmartBuilderOwnedRosterUI();
       }
     })
     .catch(err => console.error(err));
@@ -4148,6 +4437,492 @@
         </td>
       `;
       tbody.appendChild(tr);
+    });
+  }
+
+  // =========================================================================
+  // 5. SMART TEAM BUILDER AI (RACIK TIM DARI KARAKTER DIMILIKI)
+  // =========================================================================
+  let smartBuilderModel = 'flash';
+  let isSmartBuilderBusy = false;
+  let lastRecommendedTeams = [];
+
+  function bindSmartTeamBuilderEvents() {
+    // Switcher Model Flash / Pro di Modal Smart Builder
+    document.querySelectorAll('.btn-smart-model').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.btn-smart-model').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        smartBuilderModel = this.getAttribute('data-model') || 'flash';
+      });
+    });
+
+    // Sinkronisasi dropdown Akun di dalam modal Smart Builder
+    const smartAccSelect = document.getElementById('smartBuilderAccountSelect');
+    if (smartAccSelect) {
+      smartAccSelect.addEventListener('change', function (e) {
+        const accId = e.target.value;
+        partyState.accountId = accId;
+        const mainAccSelect = document.getElementById('selectGameAccount');
+        if (mainAccSelect) mainAccSelect.value = accId;
+        fetchCharactersForAccount(accId);
+      });
+    }
+
+    // Quick prompt chips di Smart Builder
+    document.querySelectorAll('.smart-prompt-chip').forEach(chip => {
+      chip.addEventListener('click', function () {
+        const note = this.getAttribute('data-note') || '';
+        const input = document.getElementById('smartBuilderCustomPrompt');
+        if (input) {
+          input.value = note;
+          input.focus();
+        }
+      });
+    });
+
+    // Tombol Generate Rekomendasi Tim AI
+    const btnGen = document.getElementById('btnGenerateSmartTeams');
+    if (btnGen) {
+      btnGen.addEventListener('click', triggerSmartTeamBuilderAi);
+    }
+  }
+
+  function openSmartTeamBuilderModal() {
+    // Sinkronkan pilihan akun dengan yang sedang dipilih di builder utama
+    const mainAccSelect = document.getElementById('selectGameAccount');
+    const smartAccSelect = document.getElementById('smartBuilderAccountSelect');
+    if (mainAccSelect && smartAccSelect) {
+      smartAccSelect.value = mainAccSelect.value || '';
+    }
+
+    refreshSmartBuilderOwnedRosterUI();
+
+    const modalEl = document.getElementById('modalSmartTeamBuilder');
+    if (modalEl) {
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+  }
+
+  function refreshSmartBuilderOwnedRosterUI() {
+    const ownedChars = (window.allCharacters || [])
+      .filter(c => c.is_owned)
+      .sort((a, b) => (b.level || 0) - (a.level || 0) || (b.rarity || 0) - (a.rarity || 0));
+
+    // Update badge jumlah karakter dimiliki
+    const countBadge = document.getElementById('smartBuilderOwnedCountBadge');
+    if (countBadge) {
+      countBadge.innerHTML = `<i class="bi bi-check2-all me-1"></i>${ownedChars.length} Karakter Dimiliki Siap Dirakit`;
+    }
+
+    // Populate dropdown Anchor Character (Hanya Karakter Dimiliki)
+    const anchorSelect = document.getElementById('smartBuilderAnchorSelect');
+    if (anchorSelect) {
+      const prevVal = anchorSelect.value;
+      anchorSelect.innerHTML = `<option value="">-- Bebas (Biarkan AI Memilih Semua) --</option>`;
+      ownedChars.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        const lvlInfo = c.level ? ` (Lv.${c.level} C${c.constellation ?? 0})` : '';
+        opt.textContent = `${c.name} — ${c.element} ★${c.rarity || 5}${lvlInfo}`;
+        if (String(c.id) === String(prevVal)) opt.selected = true;
+        anchorSelect.appendChild(opt);
+      });
+    }
+
+    // Render pills daftar karakter yang dimiliki
+    const pillsBox = document.getElementById('smartBuilderOwnedPillsContainer');
+    if (pillsBox) {
+      pillsBox.innerHTML = '';
+      if (ownedChars.length === 0) {
+        pillsBox.innerHTML = `<span class="small text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Belum ada karakter yang terdaftar di inventori akun ini.</span>`;
+        return;
+      }
+
+      ownedChars.forEach(c => {
+        const cfg = ELEMENT_CONFIG[c.element] || { color: '#c8aa6e', icon: 'bi-circle' };
+        const span = document.createElement('span');
+        span.className = 'badge bg-dark d-inline-flex align-items-center gap-1 py-1 px-2';
+        span.style.border = `1px solid ${cfg.color}`;
+        span.style.fontSize = '0.7rem';
+        const lvlStr = c.level ? `<span class="text-warning">Lv.${c.level} C${c.constellation ?? 0}</span>` : '';
+        span.innerHTML = `
+          <i class="bi ${cfg.icon}" style="color: ${cfg.color};"></i>
+          <span class="text-white">${escapeHtml(c.name)}</span>
+          ${lvlStr}
+        `;
+        pillsBox.appendChild(span);
+      });
+    }
+  }
+
+  function triggerSmartTeamBuilderAi() {
+    if (isSmartBuilderBusy) return;
+
+    const ownedChars = (window.allCharacters || []).filter(c => c.is_owned);
+    if (ownedChars.length < 4) {
+      Swal.fire(
+        'Karakter Dimiliki Kurang dari 4',
+        `Akun ini baru memiliki ${ownedChars.length} karakter di inventori. Tambahkan minimal 4 karakter terlebih dahulu atau pilih akun lain.`,
+        'warning'
+      );
+      return;
+    }
+
+    const accountId = document.getElementById('smartBuilderAccountSelect')?.value || '';
+    const focus = document.getElementById('smartBuilderFocusSelect')?.value || 'meta_abyss';
+    const anchorId = document.getElementById('smartBuilderAnchorSelect')?.value || null;
+    const customPrompt = document.getElementById('smartBuilderCustomPrompt')?.value.trim() || '';
+
+    const emptyState = document.getElementById('smartBuilderEmptyState');
+    const loadingState = document.getElementById('smartBuilderLoadingState');
+    const loadingTitle = document.getElementById('smartBuilderLoadingTitle');
+    const resultsContainer = document.getElementById('smartBuilderResultsContainer');
+    const btnGen = document.getElementById('btnGenerateSmartTeams');
+
+    isSmartBuilderBusy = true;
+    if (emptyState) emptyState.classList.add('d-none');
+    if (resultsContainer) resultsContainer.classList.add('d-none');
+    if (loadingState) loadingState.classList.remove('d-none');
+    if (loadingTitle) {
+      loadingTitle.textContent = smartBuilderModel === 'pro'
+        ? `🧠 Gemini Pro sedang meracik kombinasi tim terbaik dari ${ownedChars.length} karakter milikmu...`
+        : `⚡ Gemini Flash sedang meracik kombinasi tim terbaik dari ${ownedChars.length} karakter milikmu...`;
+    }
+
+    if (btnGen) {
+      btnGen.disabled = true;
+      btnGen.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Meracik Party AI...`;
+    }
+
+    fetch('{{ route("party.recommend-teams") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        game_account_id: accountId || null,
+        focus: focus,
+        anchor_character_id: anchorId ? parseInt(anchorId) : null,
+        custom_prompt: customPrompt,
+        model: smartBuilderModel
+      })
+    })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Gagal meracik rekomendasi tim dari Gemini AI.');
+      }
+      return data;
+    })
+    .then(data => {
+      lastRecommendedTeams = data.teams || [];
+      renderSmartTeamBuilderResults(data);
+    })
+    .catch(err => {
+      console.error(err);
+      if (emptyState) emptyState.classList.remove('d-none');
+      Swal.fire('Gagal Meracik Tim', err.message || 'Terjadi kesalahan saat menghubungi Gemini AI.', 'error');
+    })
+    .finally(() => {
+      isSmartBuilderBusy = false;
+      if (loadingState) loadingState.classList.add('d-none');
+      if (btnGen) {
+        btnGen.disabled = false;
+        btnGen.innerHTML = `<i class="bi bi-magic me-1"></i>Racik Ulang Rekomendasi AI`;
+      }
+    });
+  }
+
+  function renderSmartTeamBuilderResults(data) {
+    const resultsContainer = document.getElementById('smartBuilderResultsContainer');
+    const summaryText = document.getElementById('smartBuilderSummaryText');
+    const modelBadge = document.getElementById('smartBuilderModelUsedBadge');
+    const teamsGrid = document.getElementById('smartBuilderTeamsGrid');
+
+    if (!resultsContainer || !teamsGrid) return;
+
+    if (summaryText) {
+      summaryText.textContent = data.summary || 'Berikut adalah 3 rekomendasi formasi party terbaik dari karakter yang Anda miliki.';
+    }
+
+    if (modelBadge) {
+      const isPro = data.model_used && data.model_used.includes('pro');
+      modelBadge.className = isPro
+        ? 'badge bg-primary bg-opacity-25 border border-primary text-info'
+        : 'badge bg-warning bg-opacity-10 border border-warning text-warning';
+      modelBadge.innerHTML = `${isPro ? '🧠' : '⚡'} ${escapeHtml(data.model_used || 'gemini-2.5-flash')}${data.fallback_used ? ' (Auto-Fallback)' : ''} • ${data.owned_count || 0} Karakter Dimiliki`;
+    }
+
+    teamsGrid.innerHTML = '';
+
+    (data.teams || []).forEach((team, idx) => {
+      const members = team.members || [];
+      const activeResonances = calculateActiveResonances(members);
+
+      // Render Resonansi Badges
+      let resHtml = '';
+      if (activeResonances.length > 0) {
+        resHtml = activeResonances.map(r => `
+          <span class="badge bg-dark d-inline-flex align-items-center gap-1 py-1 px-2" style="border: 1px solid ${r.color}; color: ${r.color}; font-size: 0.7rem;" title="${escapeHtml(r.desc)}">
+            <i class="bi ${r.icon}"></i> ${escapeHtml(r.name)} (${escapeHtml(r.badge)})
+          </span>
+        `).join('');
+      }
+
+      // Render Reaksi Elemental Badges
+      const reactHtml = (team.elemental_reactions || []).map(rx => `
+        <span class="badge bg-warning bg-opacity-10 border border-warning text-warning py-1 px-2" style="font-size: 0.7rem;">
+          <i class="bi bi-lightning-fill me-1"></i>${escapeHtml(rx)}
+        </span>
+      `).join('');
+
+      // Render 4 Karakter Member Cards
+      const membersHtml = members.map((m, slotNum) => {
+        const cfg = ELEMENT_CONFIG[m.element] || { color: '#c8aa6e', icon: 'bi-circle' };
+        const elemColor = m.element_color || cfg.color;
+        const wepInfo = m.equipped_weapon
+          ? `<div class="small text-info text-truncate mt-1" style="font-size: 0.68rem;" title="${escapeHtml(m.equipped_weapon)}"><i class="bi bi-shield-slash me-1"></i>${escapeHtml(m.equipped_weapon)}</div>`
+          : '';
+        const artInfo = m.artifact_sets
+          ? `<div class="small text-success text-truncate" style="font-size: 0.68rem;" title="${escapeHtml(m.artifact_sets)}"><i class="bi bi-gem me-1"></i>${escapeHtml(m.artifact_sets)}</div>`
+          : '';
+        const tipInfo = m.build_tip
+          ? `<div class="small text-muted mt-1 pt-1 border-top border-secondary" style="font-size: 0.68rem; line-height: 1.35;">💡 ${escapeHtml(m.build_tip)}</div>`
+          : '';
+
+        return `
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="smart-member-card" style="--elem-color: ${elemColor};">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <img src="${m.icon_url || ''}" alt="${escapeHtml(m.name)}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid ${elemColor}; background: #0b0e17;">
+                <div class="overflow-hidden flex-grow-1">
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <span class="badge bg-dark border border-secondary text-gold" style="font-size: 0.62rem;">Slot ${slotNum + 1}</span>
+                    <span class="badge" style="background-color: ${elemColor}; color: #fff; font-size: 0.62rem;">
+                      <i class="bi ${cfg.icon}"></i> ${escapeHtml(m.element)}
+                    </span>
+                  </div>
+                  <div class="fw-bold text-white text-truncate mt-1" style="font-size: 0.88rem;" title="${escapeHtml(m.name)}">
+                    ${escapeHtml(m.name)}
+                  </div>
+                  <div class="d-flex align-items-center gap-1 mt-1">
+                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.63rem;">
+                      Lv.${m.level ?? 90} C${m.constellation ?? 0}
+                    </span>
+                    <span class="badge bg-primary bg-opacity-25 border border-primary text-info text-truncate" style="font-size: 0.63rem;">
+                      ${escapeHtml(m.role || 'Support')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              ${wepInfo}
+              ${artInfo}
+              ${tipInfo}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Langkah Rotasi
+      const rotationHtml = (team.rotation_guide || []).map(step => `
+        <li class="small text-light mb-1" style="font-size: 0.78rem;">${escapeHtml(step)}</li>
+      `).join('');
+
+      const tierClass = team.tier_prediction === 'SS'
+        ? 'bg-danger text-white'
+        : (team.tier_prediction === 'S' ? 'bg-warning text-dark' : 'bg-info text-dark');
+
+      const cardEl = document.createElement('div');
+      cardEl.className = 'smart-team-card p-3';
+      cardEl.innerHTML = `
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-2 mb-3 border-bottom-genshin">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="badge ${tierClass} fw-bold px-2 py-1" style="font-size: 0.78rem;">
+              Tier ${escapeHtml(team.tier_prediction || 'S')}
+            </span>
+            <h6 class="text-gold font-display mb-0" style="font-size: 1.05rem;">
+              #${idx + 1} — ${escapeHtml(team.team_name)}
+            </h6>
+            <span class="badge bg-dark border border-secondary text-light" style="font-size: 0.7rem;">
+              ${escapeHtml(team.archetype || 'Meta Party')}
+            </span>
+            <span class="badge bg-success bg-opacity-25 border border-success text-success" style="font-size: 0.7rem;">
+              <i class="bi bi-speedometer2 me-1"></i>Est. ${escapeHtml(team.estimated_dps || '75.000+ DPS')}
+            </span>
+          </div>
+
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-xs btn-outline-warning fw-bold btn-apply-smart-team" data-idx="${idx}">
+              <i class="bi bi-box-arrow-in-down-left me-1"></i>Pakai ke Builder
+            </button>
+            <button type="button" class="btn btn-xs btn-genshin fw-bold btn-save-smart-team" data-idx="${idx}">
+              <i class="bi bi-bookmark-check-fill me-1"></i>Langsung Simpan Party
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Karakter Cards -->
+        <div class="row g-2 mb-3">
+          ${membersHtml}
+        </div>
+
+        <!-- Resonansi & Reaksi -->
+        <div class="d-flex flex-wrap align-items-center gap-1 mb-3">
+          <span class="small text-muted me-1" style="font-size: 0.72rem;"><i class="bi bi-stars text-warning me-1"></i>Resonansi & Reaksi:</span>
+          ${resHtml}
+          ${reactHtml}
+        </div>
+
+        <!-- Penjelasan Sinergi & Rotasi -->
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="p-2 rounded h-100" style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08);">
+              <div class="small text-gold fw-bold mb-1" style="font-size: 0.76rem;">
+                <i class="bi bi-puzzle-fill me-1"></i>Analisis Sinergi Tim (Sesuai Koleksimu)
+              </div>
+              <p class="small text-light mb-0" style="font-size: 0.78rem; line-height: 1.5;">
+                ${escapeHtml(team.synergy_explanation || '')}
+              </p>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="p-2 rounded h-100" style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08);">
+              <div class="small text-gold fw-bold mb-1" style="font-size: 0.76rem;">
+                <i class="bi bi-arrow-repeat me-1"></i>Panduan Urutan Rotasi Kombo
+              </div>
+              <ol class="mb-0 ps-3">
+                ${rotationHtml}
+              </ol>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Bind tombol Pakai ke Builder
+      cardEl.querySelector('.btn-apply-smart-team').addEventListener('click', function () {
+        applyRecommendedTeamToBuilder(team);
+      });
+
+      // Bind tombol Langsung Simpan Party
+      cardEl.querySelector('.btn-save-smart-team').addEventListener('click', function () {
+        saveRecommendedTeamDirectly(team, this);
+      });
+
+      teamsGrid.appendChild(cardEl);
+    });
+
+    resultsContainer.classList.remove('d-none');
+  }
+
+  function applyRecommendedTeamToBuilder(team) {
+    if (!team || !team.members) return;
+
+    partyState.editingPartyId = null;
+    partyState.name = team.team_name || 'Rekomendasi AI';
+
+    const rotNotes = (team.rotation_guide || []).join(' ➔ ');
+    const fullNotes = `[${team.archetype || 'AI Team'}] ${team.synergy_explanation || ''} | Rotasi: ${rotNotes}`.substring(0, 495);
+    partyState.notes = fullNotes;
+
+    document.getElementById('inputPartyName').value = partyState.name;
+    document.getElementById('inputPartyNotes').value = partyState.notes;
+
+    const badge = document.getElementById('builderModeBadge');
+    if (badge) {
+      badge.className = 'badge rounded-pill bg-gold text-dark fw-bold px-3 py-2';
+      badge.innerHTML = `<i class="bi bi-stars me-1"></i>Mode: Hasil Racikan Smart AI`;
+    }
+    document.getElementById('btnCancelEdit').classList.add('d-none');
+    document.getElementById('btnSaveText').textContent = 'Simpan Party';
+    document.getElementById('btnSaveParty').className = 'btn btn-genshin btn-genshin-sm';
+
+    partyState.slots = [null, null, null, null];
+    team.members.slice(0, 4).forEach((m, i) => {
+      const found = window.allCharacters.find(c => c.id == m.id) || m;
+      partyState.slots[i] = found;
+    });
+
+    renderSlots();
+    renderResonances();
+    renderCharacterCatalog();
+    updateModalSlotSwitcher();
+
+    // Tutup modal Smart Builder
+    const modalEl = document.getElementById('modalSmartTeamBuilder');
+    if (modalEl) {
+      const modalInst = bootstrap.Modal.getInstance(modalEl);
+      if (modalInst) modalInst.hide();
+    }
+
+    document.getElementById('partyBuilderSection').scrollIntoView({ behavior: 'smooth' });
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `Tim "${team.team_name}" dimuat ke Party Builder!`,
+      showConfirmButton: false,
+      timer: 2200
+    });
+  }
+
+  function saveRecommendedTeamDirectly(team, btnEl) {
+    if (!team || !team.character_ids || team.character_ids.length === 0) return;
+
+    const accountId = document.getElementById('smartBuilderAccountSelect')?.value || partyState.accountId || null;
+    const rotNotes = (team.rotation_guide || []).join(' ➔ ');
+    const fullNotes = `[${team.archetype || 'AI Team'}] ${team.synergy_explanation || ''} | Rotasi: ${rotNotes}`.substring(0, 495);
+
+    const origHtml = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...`;
+
+    fetch('{{ route("party.save") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: JSON.stringify({
+        name: team.team_name || 'Party Rekomendasi AI',
+        character_ids: team.character_ids.slice(0, 4),
+        game_account_id: accountId || null,
+        notes: fullNotes
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.party) {
+        window.savedParties.unshift(data.party);
+        renderSavedParties();
+
+        btnEl.className = 'btn btn-xs btn-success fw-bold';
+        btnEl.innerHTML = `<i class="bi bi-check2-circle me-1"></i>Tersimpan!`;
+
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: data.message || `Party "${team.team_name}" berhasil disimpan!`,
+          showConfirmButton: false,
+          timer: 2200
+        });
+      } else {
+        btnEl.disabled = false;
+        btnEl.innerHTML = origHtml;
+        Swal.fire('Gagal Menyimpan', data.message || 'Terjadi kesalahan saat menyimpan party.', 'error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btnEl.disabled = false;
+      btnEl.innerHTML = origHtml;
+      Swal.fire('Error', 'Gagal menghubungi server.', 'error');
     });
   }
 
