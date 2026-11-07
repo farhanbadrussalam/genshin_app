@@ -660,17 +660,23 @@
             </div>
           </div>
 
-          {{-- Tombol Switch Model AI (Flash vs Pro) --}}
-          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="geminiModelSwitcher">
-            <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
-              <i class="bi bi-cpu me-1"></i>Model AI:
-            </span>
-            <button type="button" class="btn btn-sm btn-gemini-model active" data-model="flash" id="btnSwitchModelFlash" title="Respons Super Cepat (1-2 detik) • Kuota Free Tier: 1.500 req/hari">
-              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
-            </button>
-            <button type="button" class="btn btn-sm btn-gemini-model" data-model="pro" id="btnSwitchModelPro" title="Penalaran Teori & Kalkulasi Mendalam • Kuota Free Tier: 50 req/hari">
-              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
-            </button>
+          {{-- Tombol Switch Model AI (Flash vs Pro) & Link Settings --}}
+          <div class="d-flex align-items-center gap-1">
+            <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="geminiModelSwitcher">
+              <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
+                <i class="bi bi-cpu me-1"></i>Model AI:
+              </span>
+              <button type="button" class="btn btn-sm btn-gemini-model {{ !str_contains($aiConfig['active_model'] ?? 'flash', 'pro') ? 'active' : '' }}" data-model="flash" id="btnSwitchModelFlash" title="Respons Cepat (1-2s) • Kuota Free Tier: 1.500 req/hari">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+              </button>
+              <button type="button" class="btn btn-sm btn-gemini-model {{ str_contains($aiConfig['active_model'] ?? '', 'pro') ? 'active' : '' }}" data-model="pro" id="btnSwitchModelPro" title="Penalaran Teori Mendalam • Kuota Free Tier: 50 req/hari">
+                <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+              </button>
+            </div>
+            <a href="{{ route('settings.ai') }}" target="_blank" class="btn btn-sm btn-outline-warning text-gold px-2 py-1" title="Lihat Sisa Kuota & Atur Model Default" style="font-size: 0.75rem;">
+              <i class="bi bi-gear-fill"></i>
+              <span class="badge bg-dark border border-secondary text-warning ms-1" style="font-size: 0.65rem;">{{ $aiQuotaStats['rpd']['used'] }}/{{ $aiQuotaStats['rpd']['limit'] }}</span>
+            </a>
           </div>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -839,17 +845,23 @@
             </div>
           </div>
 
-          {{-- Tombol Switch Model AI di Modal Komparasi --}}
-          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="compareModelSwitcher">
-            <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
-              <i class="bi bi-cpu me-1"></i>Model AI:
-            </span>
-            <button type="button" class="btn btn-sm btn-gemini-model active" data-model="flash" title="Respons Super Cepat (1-2 detik) • Kuota Free Tier: 1.500 req/hari">
-              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
-            </button>
-            <button type="button" class="btn btn-sm btn-gemini-model" data-model="pro" title="Penalaran Teori & Kalkulasi Mendalam • Kuota Free Tier: 50 req/hari">
-              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
-            </button>
+          {{-- Tombol Switch Model AI di Modal Komparasi & Link Settings --}}
+          <div class="d-flex align-items-center gap-1">
+            <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="compareModelSwitcher">
+              <span class="small text-muted px-2 d-none d-sm-inline" style="font-size: 0.72rem;">
+                <i class="bi bi-cpu me-1"></i>Model AI:
+              </span>
+              <button type="button" class="btn btn-sm btn-gemini-model {{ !str_contains($aiConfig['active_model'] ?? 'flash', 'pro') ? 'active' : '' }}" data-model="flash" title="Respons Cepat (1-2 detik) • Kuota Free Tier: 1.500 req/hari">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+              </button>
+              <button type="button" class="btn btn-sm btn-gemini-model {{ str_contains($aiConfig['active_model'] ?? '', 'pro') ? 'active' : '' }}" data-model="pro" title="Penalaran Teori Mendalam • Kuota Free Tier: 50 req/hari">
+                <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+              </button>
+            </div>
+            <a href="{{ route('settings.ai') }}" target="_blank" class="btn btn-sm btn-outline-warning text-gold px-2 py-1" title="Lihat Sisa Kuota & Atur Model Default" style="font-size: 0.75rem;">
+              <i class="bi bi-gear-fill"></i>
+              <span class="badge bg-dark border border-secondary text-warning ms-1" style="font-size: 0.65rem;">{{ $aiQuotaStats['rpd']['used'] }}/{{ $aiQuotaStats['rpd']['limit'] }}</span>
+            </a>
           </div>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1018,17 +1030,23 @@
             </div>
           </div>
 
-          {{-- Model Switcher in Smart Team Builder --}}
-          <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="smartBuilderModelSwitchGroup">
-            <span class="small text-muted px-2 d-none d-md-inline" style="font-size: 0.72rem;">
-              <i class="bi bi-cpu me-1"></i>Model AI:
-            </span>
-            <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model active" data-model="flash" title="Cepat, kuota lega & akurat">
-              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
-            </button>
-            <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model" data-model="pro" title="Reasoning теория mendalam (Auto-fallback ke Flash jika limit)">
-              <i class="bi bi-stars text-info me-1"></i>Gemini Pro
-            </button>
+          {{-- Model Switcher in Smart Team Builder & Link Settings --}}
+          <div class="d-flex align-items-center gap-1">
+            <div class="d-flex align-items-center gap-1 bg-dark p-1 rounded border border-secondary" id="smartBuilderModelSwitchGroup">
+              <span class="small text-muted px-2 d-none d-md-inline" style="font-size: 0.72rem;">
+                <i class="bi bi-cpu me-1"></i>Model AI:
+              </span>
+              <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model {{ !str_contains($aiConfig['active_model'] ?? 'flash', 'pro') ? 'active' : '' }}" data-model="flash" title="Cepat, kuota lega & akurat">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gemini Flash
+              </button>
+              <button type="button" class="btn btn-sm btn-gemini-model btn-smart-model {{ str_contains($aiConfig['active_model'] ?? '', 'pro') ? 'active' : '' }}" data-model="pro" title="Reasoning teori mendalam (Auto-fallback ke Flash jika limit)">
+                <i class="bi bi-stars text-info me-1"></i>Gemini Pro
+              </button>
+            </div>
+            <a href="{{ route('settings.ai') }}" target="_blank" class="btn btn-sm btn-outline-warning text-gold px-2 py-1" title="Lihat Sisa Kuota & Atur Model Default" style="font-size: 0.75rem;">
+              <i class="bi bi-gear-fill"></i>
+              <span class="badge bg-dark border border-secondary text-warning ms-1" style="font-size: 0.65rem;">{{ $aiQuotaStats['rpd']['used'] }}/{{ $aiQuotaStats['rpd']['limit'] }}</span>
+            </a>
           </div>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -2057,6 +2075,8 @@
   // ─── INITIAL DATA FROM SERVER ──────────────────────────
   window.allCharacters = @json($characters);
   window.savedParties = @json($formattedSavedParties);
+  window.aiConfig = @json($aiConfig ?? []);
+  const defaultAiType = (window.aiConfig && window.aiConfig.active_model && window.aiConfig.active_model.includes('pro')) ? 'pro' : 'flash';
   const csrfToken = '{{ csrf_token() }}';
 
   // ─── ELEMENT COLORS & METADATA ─────────────────────────
@@ -3782,7 +3802,7 @@
   const geminiChatState = {
     activeBenchmarkId: null,
     partyName: 'Party',
-    model: 'flash', // 'flash' | 'pro'
+    model: defaultAiType || 'flash', // 'flash' | 'pro'
     isSending: false,
     sessionsByBenchmark: {}
   };
@@ -4443,7 +4463,7 @@
   // =========================================================================
   // 5. SMART TEAM BUILDER AI (RACIK TIM DARI KARAKTER DIMILIKI)
   // =========================================================================
-  let smartBuilderModel = 'flash';
+  let smartBuilderModel = defaultAiType || 'flash';
   let isSmartBuilderBusy = false;
   let lastRecommendedTeams = [];
 

@@ -3,7 +3,7 @@
     $isGenshinRoute = request()->routeIs(
         'inventory.*', 'character.*', 'weapon.*', 'artifact.*', 'artifact-scoring.*',
         'enemy.*', 'material.*', 'family.*', 'task.*', 'calculator.*', 'party.*',
-        'daily-resin.*', 'farming-planner.*', 'build-planner.*'
+        'daily-resin.*', 'farming-planner.*', 'build-planner.*', 'settings.*'
     );
     if ($isGenshinRoute && !$activeGame) {
         session(['active_game' => 'genshin_impact']);
@@ -240,6 +240,11 @@
               <li>
                 <a class="dropdown-item small" href="{{ route('inventory.dashboard') }}">
                   <i class="bi bi-speedometer2 me-2 text-gold"></i>Dashboard
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item small {{ request()->routeIs('settings.ai') ? 'active' : '' }}" href="{{ route('settings.ai') }}">
+                  <i class="bi bi-cpu me-2 text-warning"></i>Pengaturan AI & Kuota
                 </a>
               </li>
               <li><hr class="dropdown-divider border-secondary opacity-25"></li>

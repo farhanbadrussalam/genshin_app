@@ -9,6 +9,7 @@ use App\Models\InventoryCharacter;
 use App\Models\InventoryWeapon;
 use App\Models\PartyBenchmark;
 use App\Models\SavedParty;
+use App\Services\AiSettingService;
 use App\Services\PartyBenchmarkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,10 +20,14 @@ use Illuminate\View\View;
 class PartyAnalyzerController extends Controller
 {
     protected PartyBenchmarkService $benchmarkService;
+    protected AiSettingService $aiSettingService;
 
-    public function __construct(PartyBenchmarkService $benchmarkService)
-    {
+    public function __construct(
+        PartyBenchmarkService $benchmarkService,
+        AiSettingService $aiSettingService
+    ) {
         $this->benchmarkService = $benchmarkService;
+        $this->aiSettingService = $aiSettingService;
     }
 
     /**
@@ -50,12 +55,17 @@ class PartyAnalyzerController extends Controller
 
         $formattedSavedParties = $savedParties->map(fn($p) => $this->formatPartyResource($p))->values();
 
+        $aiConfig = $this->aiSettingService->getConfig();
+        $aiQuotaStats = $this->aiSettingService->getQuotaUsageStats();
+
         return view('party.index', [
             'gameAccounts'          => $gameAccounts,
             'selectedAccountId'     => $selectedAccountId,
             'characters'            => $characters,
             'savedParties'          => $savedParties,
             'formattedSavedParties' => $formattedSavedParties,
+            'aiConfig'              => $aiConfig,
+            'aiQuotaStats'          => $aiQuotaStats,
         ]);
     }
 
@@ -380,11 +390,14 @@ class PartyAnalyzerController extends Controller
                 $this->cacheCharactersForSavedParties(collect([$partyBenchmark->savedParty]));
             }
 
+            $activeModel = $this->aiSettingService->getActiveModel();
+            $defaultChoice = str_contains($activeModel, 'pro') ? 'pro' : 'flash';
+
             $result = $this->benchmarkService->chatWithTheorycrafter(
                 $partyBenchmark,
                 $validated['message'],
                 $validated['history'] ?? [],
-                $validated['model'] ?? 'flash'
+                $validated['model'] ?? $defaultChoice
             );
 
             return response()->json([
@@ -456,10 +469,13 @@ class PartyAnalyzerController extends Controller
             ];
 
             if (!empty($validated['with_ai'])) {
+                $activeModel = $this->aiSettingService->getActiveModel();
+                $defaultChoice = str_contains($activeModel, 'pro') ? 'pro' : 'flash';
+
                 $aiResult = $this->benchmarkService->compareBenchmarksWithAi(
                     $benchA,
                     $benchB,
-                    $validated['model'] ?? 'flash'
+                    $validated['model'] ?? $defaultChoice
                 );
                 $responsePayload['ai_analysis']   = $aiResult['analysis'];
                 $responsePayload['model_used']    = $aiResult['model_used'];
@@ -503,7 +519,9 @@ class PartyAnalyzerController extends Controller
 
         try {
             $ownedRoster = $this->getOwnedCharactersRoster($accountId);
-            $modelChoice = $validated['model'] ?? 'flash';
+            $activeModel = $this->aiSettingService->getActiveModel();
+            $defaultChoice = str_contains($activeModel, 'pro') ? 'pro' : 'flash';
+            $modelChoice = $validated['model'] ?? $defaultChoice;
 
             $options = [
                 'account_name'        => $accountName,

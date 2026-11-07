@@ -202,4 +202,12 @@ Route::middleware('auth')->group(function () {
     Route::get('build-planner', [\App\Http\Controllers\BuildPlannerController::class, 'index'])
         ->name('build-planner.index');
 
+    // ─── AI Model & Quota Settings ───────────────────────────────────────────
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/ai', [\App\Http\Controllers\AiSettingController::class, 'index'])->name('ai');
+        Route::post('/ai', [\App\Http\Controllers\AiSettingController::class, 'update'])->name('ai.update');
+        Route::get('/ai/quota-ajax', [\App\Http\Controllers\AiSettingController::class, 'quotaAjax'])->name('ai.quota-ajax');
+        Route::post('/ai/test-connection', [\App\Http\Controllers\AiSettingController::class, 'testConnection'])->name('ai.test-connection');
+    });
+
 });

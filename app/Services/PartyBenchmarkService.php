@@ -13,11 +13,13 @@ class PartyBenchmarkService
 {
     protected string $apiKey;
     protected string $model;
+    protected AiSettingService $aiSettingService;
 
-    public function __construct()
+    public function __construct(AiSettingService $aiSettingService)
     {
+        $this->aiSettingService = $aiSettingService;
         $this->apiKey = config('services.gemini.api_key', env('GEMINI_API_KEY', ''));
-        $this->model  = config('services.gemini.model', env('GEMINI_MODEL', 'gemini-2.5-flash'));
+        $this->model  = $this->aiSettingService->getActiveModel();
     }
 
     /**
@@ -28,6 +30,15 @@ class PartyBenchmarkService
         if (!$this->apiKey) {
             throw new \Exception('GEMINI_API_KEY belum dikonfigurasi di sistem.');
         }
+
+        $activeModel = $this->aiSettingService->getActiveModel();
+        // Vision bekerja terbaik dengan flash series
+        if (str_contains($activeModel, 'pro')) {
+            $candidateModels = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+        } else {
+            $candidateModels = [$activeModel, 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+        }
+        $candidateModels = array_values(array_unique($candidateModels));
 
         $imageBytes = ($image instanceof UploadedFile)
             ? file_get_contents($image->getRealPath())
@@ -145,46 +156,78 @@ TEXT;
             ],
         ];
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
+        $lastError = null;
+        $t0 = microtime(true);
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-        ])->timeout(60)->post($url, $payload);
+        foreach ($candidateModels as $modelName) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
 
-        if (!$response->successful()) {
-            Log::error('Gemini Vision Extraction Error: ' . $response->body());
-            throw new \Exception('Gagal mengekstrak gambar dari Gemini API: ' . ($response->json('error.message') ?? $response->status()));
-        }
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(60)->post($url, $payload);
 
-        $result = $response->json();
-        $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                $durationMs = (int)round((microtime(true) - $t0) * 1000);
 
-        if (!$text) {
-            throw new \Exception('Respons Gemini tidak berisi data teks.');
-        }
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
-        $parsed = json_decode($text, true);
-        if (!is_array($parsed)) {
-            throw new \Exception('Gagal menguraikan JSON hasil ekstraksi Gemini.');
-        }
+                    if ($text) {
+                        $parsed = json_decode($text, true);
+                        if (is_array($parsed)) {
+                            $promptTok = (int)($result['usageMetadata']['promptTokenCount'] ?? 0);
+                            $candTok   = (int)($result['usageMetadata']['candidatesTokenCount'] ?? 0);
 
-        // Normalisasi persentase jika AI mengembalikan format desimal 0-1
-        if (!empty($parsed['character_stats']) && is_array($parsed['character_stats'])) {
-            foreach ($parsed['character_stats'] as &$cs) {
-                if (isset($cs['crit_rate']) && (float)$cs['crit_rate'] <= 1.0 && (float)$cs['crit_rate'] > 0) {
-                    $cs['crit_rate'] = round((float)$cs['crit_rate'] * 100, 1);
+                            $this->aiSettingService->recordUsage(
+                                feature: 'vision_extract',
+                                modelUsed: $modelName,
+                                promptTokens: $promptTok,
+                                candidatesTokens: $candTok,
+                                status: 'success',
+                                durationMs: $durationMs
+                            );
+
+                            // Normalisasi persentase jika AI mengembalikan format desimal 0-1
+                            if (!empty($parsed['character_stats']) && is_array($parsed['character_stats'])) {
+                                foreach ($parsed['character_stats'] as &$cs) {
+                                    if (isset($cs['crit_rate']) && (float)$cs['crit_rate'] <= 1.0 && (float)$cs['crit_rate'] > 0) {
+                                        $cs['crit_rate'] = round((float)$cs['crit_rate'] * 100, 1);
+                                    }
+                                    if (isset($cs['crit_dmg']) && (float)$cs['crit_dmg'] <= 3.5 && (float)$cs['crit_dmg'] > 0) {
+                                        $cs['crit_dmg'] = round((float)$cs['crit_dmg'] * 100, 1);
+                                    }
+                                    if (isset($cs['energy_recharge']) && (float)$cs['energy_recharge'] <= 4.0 && (float)$cs['energy_recharge'] > 0) {
+                                        $cs['energy_recharge'] = round((float)$cs['energy_recharge'] * 100, 1);
+                                    }
+                                }
+                                unset($cs);
+                            }
+
+                            return $parsed;
+                        }
+                    }
                 }
-                if (isset($cs['crit_dmg']) && (float)$cs['crit_dmg'] <= 3.5 && (float)$cs['crit_dmg'] > 0) {
-                    $cs['crit_dmg'] = round((float)$cs['crit_dmg'] * 100, 1);
-                }
-                if (isset($cs['energy_recharge']) && (float)$cs['energy_recharge'] <= 4.0 && (float)$cs['energy_recharge'] > 0) {
-                    $cs['energy_recharge'] = round((float)$cs['energy_recharge'] * 100, 1);
-                }
+
+                $status = $response->status();
+                $errMsg = $response->json('error.message') ?? "HTTP {$status}";
+                $lastError = $errMsg;
+                Log::warning("Gemini Vision percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                $this->aiSettingService->recordUsage(
+                    feature: 'vision_extract',
+                    modelUsed: $modelName,
+                    status: 'error',
+                    errorMessage: $errMsg,
+                    durationMs: $durationMs
+                );
+            } catch (\Throwable $e) {
+                $lastError = $e->getMessage();
+                Log::warning("Gemini Vision exception model {$modelName}: " . $e->getMessage());
             }
-            unset($cs);
         }
 
-        return $parsed;
+        throw new \Exception('Gagal mengekstrak gambar dari Gemini API: ' . ($lastError ?? 'Tidak ada respons dari server.'));
     }
 
     /**
@@ -546,13 +589,9 @@ SYS;
             ];
         }
 
-        // Tentukan urutan model berdasarkan pilihan user ('flash' atau 'pro') beserta fallback aman
-        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
-        if ($modelChoice === 'pro') {
-            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
-        } else {
-            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
-        }
+        // Tentukan urutan model berdasarkan pilihan user ('flash' atau 'pro') beserta fallback aman dari settingan sistem
+        $candidateModels = $this->aiSettingService->getCandidateModels($modelChoice);
+        $cfg = $this->aiSettingService->getConfig();
 
         $payload = [
             'system_instruction' => [
@@ -562,14 +601,15 @@ SYS;
             ],
             'contents' => $contents,
             'generationConfig' => [
-                'temperature'     => 0.4,
-                'maxOutputTokens' => 8192,
+                'temperature'     => $cfg['temperature'] ?? 0.4,
+                'maxOutputTokens' => $cfg['max_tokens'] ?? 8192,
             ],
         ];
 
         $lastError = null;
-        $usedModel = $candidateModels[0];
+        $usedModel = $candidateModels[0] ?? 'gemini-2.5-flash';
         $fallbackUsed = false;
+        $t0 = microtime(true);
 
         foreach ($candidateModels as $idx => $modelName) {
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
@@ -578,6 +618,8 @@ SYS;
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/json',
                 ])->timeout(60)->post($url, $payload);
+
+                $durationMs = (int)round((microtime(true) - $t0) * 1000);
 
                 if ($response->successful()) {
                     $result = $response->json();
@@ -598,6 +640,15 @@ SYS;
                         $usedModel = $modelName;
                         $fallbackUsed = ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash'));
 
+                        $this->aiSettingService->recordUsage(
+                            feature: 'chat',
+                            modelUsed: $usedModel,
+                            promptTokens: (int)($result['usageMetadata']['promptTokenCount'] ?? 0),
+                            candidatesTokens: (int)($result['usageMetadata']['candidatesTokenCount'] ?? 0),
+                            status: $fallbackUsed ? 'fallback' : 'success',
+                            durationMs: $durationMs
+                        );
+
                         return [
                             'reply'         => $replyText,
                             'model_used'    => $usedModel,
@@ -611,6 +662,14 @@ SYS;
                 $errMsg = $response->json('error.message') ?? "HTTP {$status}";
                 $lastError = $errMsg;
                 Log::warning("Gemini Chat percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                $this->aiSettingService->recordUsage(
+                    feature: 'chat',
+                    modelUsed: $modelName,
+                    status: 'error',
+                    errorMessage: $errMsg,
+                    durationMs: $durationMs
+                );
 
                 // Jika error karena API key invalid (400/403 API_KEY_INVALID), hentikan loop
                 if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
@@ -821,12 +880,8 @@ Berikan analisis komparasi yang tajam, terstruktur dalam **Bahasa Indonesia** me
 4. **💡 Kesimpulan & Rekomendasi Optimasi Lanjutan**: Setup mana yang wajib dipakai untuk Spiral Abyss Lantai 12, serta saran penyempurnaan berikutnya.
 PROMPT;
 
-        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
-        if ($modelChoice === 'pro') {
-            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
-        } else {
-            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
-        }
+        $candidateModels = $this->aiSettingService->getCandidateModels($modelChoice);
+        $cfg = $this->aiSettingService->getConfig();
 
         $payload = [
             'contents' => [
@@ -837,11 +892,13 @@ PROMPT;
             ],
             'generationConfig' => [
                 'temperature'     => 0.35,
-                'maxOutputTokens' => 8192,
+                'maxOutputTokens' => $cfg['max_tokens'] ?? 8192,
             ],
         ];
 
         $lastError = null;
+        $t0 = microtime(true);
+
         foreach ($candidateModels as $idx => $modelName) {
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
 
@@ -849,6 +906,8 @@ PROMPT;
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/json',
                 ])->timeout(60)->post($url, $payload);
+
+                $durationMs = (int)round((microtime(true) - $t0) * 1000);
 
                 if ($response->successful()) {
                     $result = $response->json();
@@ -866,12 +925,23 @@ PROMPT;
 
                     $replyText = trim(implode("\n", $replyParts));
                     if ($replyText !== '') {
+                        $isFallback = ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash'));
+
+                        $this->aiSettingService->recordUsage(
+                            feature: 'compare',
+                            modelUsed: $modelName,
+                            promptTokens: (int)($result['usageMetadata']['promptTokenCount'] ?? 0),
+                            candidatesTokens: (int)($result['usageMetadata']['candidatesTokenCount'] ?? 0),
+                            status: $isFallback ? 'fallback' : 'success',
+                            durationMs: $durationMs
+                        );
+
                         return [
                             'analysis'      => $replyText,
                             'metrics'       => $metrics,
                             'model_used'    => $modelName,
                             'model_choice'  => $modelChoice,
-                            'fallback_used' => ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash')),
+                            'fallback_used' => $isFallback,
                         ];
                     }
                 }
@@ -880,6 +950,14 @@ PROMPT;
                 $errMsg = $response->json('error.message') ?? "HTTP {$status}";
                 $lastError = $errMsg;
                 Log::warning("Gemini Compare percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                $this->aiSettingService->recordUsage(
+                    feature: 'compare',
+                    modelUsed: $modelName,
+                    status: 'error',
+                    errorMessage: $errMsg,
+                    durationMs: $durationMs
+                );
 
                 if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
                     break;
@@ -1022,12 +1100,8 @@ Kembalikan **HANYA JSON murni** dengan struktur berikut:
 }
 PROMPT;
 
-        $defaultFlash = $this->model ?: 'gemini-2.5-flash';
-        if ($modelChoice === 'pro') {
-            $candidateModels = ['gemini-2.5-pro', $defaultFlash, 'gemini-2.5-flash-lite'];
-        } else {
-            $candidateModels = array_values(array_unique([$defaultFlash, 'gemini-2.5-flash', 'gemini-2.5-flash-lite']));
-        }
+        $candidateModels = $this->aiSettingService->getCandidateModels($modelChoice);
+        $cfg = $this->aiSettingService->getConfig();
 
         $payload = [
             'contents' => [
@@ -1038,12 +1112,14 @@ PROMPT;
             ],
             'generationConfig' => [
                 'response_mime_type' => 'application/json',
-                'temperature'        => 0.2,
-                'maxOutputTokens'    => 8192,
+                'temperature'        => $cfg['temperature'] ?? 0.2,
+                'maxOutputTokens'    => $cfg['max_tokens'] ?? 8192,
             ],
         ];
 
         $lastError = null;
+        $t0 = microtime(true);
+
         foreach ($candidateModels as $idx => $modelName) {
             $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
 
@@ -1051,6 +1127,8 @@ PROMPT;
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/json',
                 ])->timeout(65)->post($url, $payload);
+
+                $durationMs = (int)round((microtime(true) - $t0) * 1000);
 
                 if ($response->successful()) {
                     $result = $response->json();
@@ -1173,13 +1251,24 @@ PROMPT;
                         }
 
                         if (!empty($validatedTeams)) {
+                            $isFallback = ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash'));
+
+                            $this->aiSettingService->recordUsage(
+                                feature: 'smart_team_builder',
+                                modelUsed: $modelName,
+                                promptTokens: (int)($result['usageMetadata']['promptTokenCount'] ?? 0),
+                                candidatesTokens: (int)($result['usageMetadata']['candidatesTokenCount'] ?? 0),
+                                status: $isFallback ? 'fallback' : 'success',
+                                durationMs: $durationMs
+                            );
+
                             return [
                                 'summary'       => $parsed['summary'] ?? 'Berikut adalah rekomendasi komposisi tim terbaik berdasarkan karakter yang Anda miliki.',
                                 'teams'         => $validatedTeams,
                                 'owned_count'   => count($ownedCharacters),
                                 'model_used'    => $modelName,
                                 'model_choice'  => $modelChoice,
-                                'fallback_used' => ($idx > 0 && $modelChoice === 'pro' && str_contains($modelName, 'flash')),
+                                'fallback_used' => $isFallback,
                             ];
                         }
                     }
@@ -1189,6 +1278,14 @@ PROMPT;
                 $errMsg = $response->json('error.message') ?? "HTTP {$status}";
                 $lastError = $errMsg;
                 Log::warning("Gemini SmartTeamBuilder percobaan model {$modelName} gagal ({$status}): {$errMsg}");
+
+                $this->aiSettingService->recordUsage(
+                    feature: 'smart_team_builder',
+                    modelUsed: $modelName,
+                    status: 'error',
+                    errorMessage: $errMsg,
+                    durationMs: $durationMs
+                );
 
                 if ($status === 400 && str_contains(strtolower($errMsg), 'api key')) {
                     break;
